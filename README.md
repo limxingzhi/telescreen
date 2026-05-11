@@ -13,6 +13,7 @@ Supports **Tailscale SSH** — connect to your container from anywhere on your t
 - **Oh My Zsh**
 - **ripgrep**, **fd-find**, **git**, **curl**, **wget**
 - **Tailscale** (with SSH support)
+- **Crush** (AI coding assistant, powered by z.ai)
 - Shell aliases: `n` → `npm`, `nr` → `npm run`, `tat` → tmux session switcher
 
 ## Quick Start
@@ -82,8 +83,22 @@ volumes:
 
 | Variable | Description |
 |----------|-------------|
+| `ZAI_API_KEY` | API key for Crush's z.ai provider. Required to use the AI coding assistant. |
 | `TS_AUTHKEY` | Tailscale auth key. Required on first run; optional after that if state is persisted. Generate one at [tailscale.com/admin/settings/keys](https://login.tailscale.com/admin/settings/keys). |
 | `TS_HOSTNAME` | Hostname for the Tailscale node (e.g. `my-dev-env` → SSH via `ssh root@my-dev-env`) |
+
+## Crush (AI Coding Assistant)
+
+The image includes [Crush](https://charm.land) — an AI coding assistant configured to use the **z.ai** provider. The config is bundled at `/etc/crush/crush.json` and uses two models:
+
+- **Large**: `glm-5.1` (65k max tokens)
+- **Small**: `glm-4.7-flash`
+
+Pass your API key at runtime:
+
+```sh
+docker run -it --rm -e ZAI_API_KEY=your-key dev-env
+```
 
 ## Neovim Config
 
@@ -105,5 +120,6 @@ Images are built for **linux/amd64** and **linux/arm64** and published to GHCR o
 - Works with VS Code Dev Containers (optional)
 - Image tags: `latest` + date-based (`YYYY.MM.DD`)
 - Uses Tailscale **userspace networking** — no special Docker capabilities (`--cap-add`) needed
+- Crush config lives at `/etc/crush/crush.json` (persists across volume mounts on `/root`)
 - Two volumes: `/root` for configs/projects, `/var/lib/tailscale` for Tailscale state
 - Tailscale SSH requires an [ACL policy](https://login.tailscale.com/admin/acls) that allows SSH access

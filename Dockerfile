@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     ripgrep \
+    jq \
+    fzf \
     fd-find \
     build-essential \
     ca-certificates \
@@ -50,6 +52,16 @@ RUN ARCH=$(uname -m) && \
     install lazygit /usr/local/bin && \
     rm lazygit lazygit.tar.gz
 
+# Install Crush CLI from GitHub releases
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ]; then CRUSH_ARCH="arm64"; \
+    else CRUSH_ARCH="amd64"; fi && \
+    CRUSH_VERSION=$(curl -s https://api.github.com/repos/charmbracelet/crush/releases/latest | grep tag_name | cut -d '"' -f 4) && \
+    curl -Lo /tmp/crush.deb \
+      "https://github.com/charmbracelet/crush/releases/download/${CRUSH_VERSION}/crush_${CRUSH_VERSION#v}_${CRUSH_ARCH}.deb" && \
+    dpkg -i /tmp/crush.deb && \
+    rm /tmp/crush.deb
+
 # TypeScript tooling
 RUN npm install -g npm@latest typescript ts-node
 
@@ -70,6 +82,10 @@ VOLUME /root
 # Tailscale state (separate volume)
 VOLUME /var/lib/tailscale
 
+
+# Crush config (outside /root so it survives bind mounts)
+COPY crush/crush.json /etc/crush/crush.json
+ENV CRUSH_GLOBAL_CONFIG=/etc/crush/crush.json
 
 # Shell config (outside /root so it survives bind mounts)
 COPY zsh/aliases.zsh /etc/zsh/aliases.zsh
