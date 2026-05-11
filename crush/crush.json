@@ -1,5 +1,8 @@
 {
   "$schema": "https://charm.land/crush.json",
+  "options": {
+    "skills_paths": ["/etc/crush/skills"]
+  },
   "models": {
     "large": {
       "model": "glm-5.1",
