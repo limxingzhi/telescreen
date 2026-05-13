@@ -1,86 +1,59 @@
 # AGENTS.md
 
-## Project Overview
+## Overview
 
-A Docker-based development environment image built on `node:24-bookworm`. It provisions a ready-to-use workspace with neovim, tmux, lazygit, TypeScript tooling, Oh My Zsh, Crush (AI coding assistant), Glow, and Tailscale (with SSH), then bootstraps tmux config, shell aliases, and a remote neovim config on container startup.
+Docker dev environment on `node:24-bookworm`: neovim, tmux, lazygit, TypeScript, Oh My Zsh, Crush, Glow, Tailscale SSH. Published to `ghcr.io` for `linux/amd64`+`linux/arm64`. No tests or linting.
 
-The image is published to `ghcr.io` on every push to `main` (tagged `latest` + date) and `dev` (tagged `dev` + `dev-DATE`) for both `linux/amd64` and `linux/arm64`.
+**Branch tags**: `main` → `latest` + `YYYY.MM.DD` | `dev` → `dev` + `dev-YYYY.MM.DD`
 
 ## Commands
 
 | Action | Command |
 |--------|---------|
-| Build image locally | `docker build -t dockerized-env .` |
-| Run container | `docker run -it --rm dockerized-env` |
-| Run with workspace mount | `docker run -it --rm -v dev-env-home:/root dockerized-env` |
-| Run with Tailscale SSH | `docker run -it --rm -v dev-env-home:/root -v tailscale-state:/var/lib/tailscale -e TS_AUTHKEY=tskey-auth-xxxxx -e TS_HOSTNAME=my-dev-env dockerized-env` |
-| Run with timezone | `docker run -it --rm -e TZ=America/New_York dockerized-env` |
-| Run with Crush + Tailscale SSH | `docker run -it --rm -v dev-env-home:/root -v tailscale-state:/var/lib/tailscale -e ZAI_API_KEY=your-key -e TS_AUTHKEY=tskey-auth-xxxxx -e TS_HOSTNAME=my-dev-env dockerized-env` |
-| Multi-platform build (needs buildx + QEMU) | `docker buildx build --platform linux/amd64,linux/arm64 -t dockerized-env .` |
-
-There is no test suite, linting, or CI beyond the publish workflow.
+| Build | `docker build -t dockerized-env .` |
+| Run | `docker run -it --rm dockerized-env` |
+| Persistent home | `docker run -it --rm -v dev-env-home:/root dockerized-env` |
+| Timezone | `-e TZ=America/New_York` |
+| Tailscale SSH | `-v tailscale-state:/var/lib/tailscale -e TS_AUTHKEY=tskey-auth-xxx -e TS_HOSTNAME=my-dev-env` |
+| Crush | `-e ZAI_API_KEY=your-key` |
+| Multi-arch | `docker buildx build --platform linux/amd64,linux/arm64 -t dockerized-env .` |
 
 ## Architecture
 
 ```
-Dockerfile                        → Defines the image (base image, Tailscale, apt packages, Crush, Glow, Oh My Zsh, TypeScript, Deno, tmux plugins, env vars, entrypoint)
-entrypoint.sh                     → Runs on every container start (starts Tailscale, links tmux config, copies tmux plugins, fetches neovim config, writes shell aliases)
-crush/crush.json                  → Crush global config (uses zai provider with $ZAI_API_KEY, installed at /etc/crush/crush.json)
-tmux/tmux.conf                    → tmux config with mouse, vi copy mode, tmux-yank, popup, session renumber hooks
-tmux/popup.sh                     → Opens a scratch tmux session in a popup (bound to prefix+s)
-tmux/renumber-sess.sh             → Renumbers numeric tmux sessions sequentially
-zsh/aliases.zsh                   → Shell aliases (n, nr, tat)
-skills/                           → Crush agent skills (copied to /etc/agents/skills/)
-.github/workflows/publish.yml     → Builds and pushes multi-arch image to GHCR on push to main
+Dockerfile                    → Image (packages, Crush, Glow, Oh My Zsh, TS, Deno, tmux plugins, entrypoint)
+entrypoint.sh                 → Runtime: Tailscale, tmux, plugins, neovim config, aliases
+crush/crush.json              → Crush config (zai provider, $ZAI_API_KEY) → /etc/crush/crush.json
+tmux/tmux.conf                → Mouse, vi copy, tmux-yank, popup, renumber hooks
+tmux/popup.sh                 → Scratch popup (prefix+s)
+tmux/renumber-sess.sh         → Renumber numeric sessions
+zsh/aliases.zsh               → n, nr, tat
+skills/                       → Crush skills → /etc/agents/skills/
+.github/workflows/publish.yml → Multi-arch GHCR publish
 ```
 
-**Startup flow:**
-1. `entrypoint.sh` runs as entrypoint (container runs as root)
-2. Sets timezone from `TZ` env var (defaults to `UTC`)
-3. Bootstraps `.zshrc` from Oh My Zsh template if missing
-3. Symlinks `~/.tmux.conf` → `/etc/tmux/tmux.conf` if not present
-4. Copies TPM + tmux-yank to `~/.tmux/plugins/` if not present (pre-installed at build time in `/opt/tmux-plugins/`)
-5. Copies Crush agent skills to `~/.config/agents/skills/`
-6. Fetches neovim `init.lua` from a GitHub Gist (falls back to `/etc/nvim/init.lua`)
-7. If `TS_AUTHKEY` is set, starts `tailscaled` in background, then runs `tailscale up --authkey=... --ssh`. If existing state is found in `/var/lib/tailscale`, it reuses it without re-authenticating.
-8. Appends shell aliases source to `/root/.zshrc` (idempotent via `grep -qxF`)
-9. `exec "$@"` to hand off to the default `CMD` (`zsh`)
+**Startup** (runs as root): set TZ → bootstrap `.zshrc` → symlink tmux.conf → copy plugins from `/opt/tmux-plugins/` → copy Crush skills → fetch neovim config from Gist (fallback `/etc/nvim/init.lua`) → start `tailscaled` if `TS_AUTHKEY` set → append aliases (idempotent) → `exec "$@"` (zsh)
 
 ## Key Details
 
-- **Base image**: `node:24-bookworm` — plain Node.js 24 on Debian Bookworm. zsh, git, and Oh My Zsh are installed manually in the Dockerfile.
-- **No `USER` directive**: The entire container runs as root. The neovim config dir is `/root/.config/nvim`.
-- **Tailscale is installed from the official Debian repo**: Uses the `bookworm` suite apt repo from `pkgs.tailscale.com`. Installed at build time, started at runtime only if `TS_AUTHKEY` is provided.
-- **Tailscale state persistence**: Tailscale state lives in `/var/lib/tailscale` (separate volume). Mount a named volume there to persist state across restarts — no need to provide `TS_AUTHKEY` on subsequent runs.
-- **Tailscale SSH**: Enabled via `--ssh` flag on `tailscale up`. No OpenSSH server needed — Tailscale intercepts SSH connections directly. Authentication is handled by Tailscale's ACLs, not host keys.
-- **Userspace networking**: `tailscaled` runs with `--tun=userspace-networking`, which doesn't require `/dev/net/tun`, kernel modules, or special Docker capabilities (`--cap-add`). This makes it work in any Docker environment.
-- **Home as workspace**: `WORKDIR` is `/root`. Projects, configs, and all tooling state live in the home directory. Mount a volume at `/root` to persist everything.
-- **Neovim config is fetched at runtime**: On first start, the entrypoint fetches the config from a GitHub Gist. If the fetch fails, it falls back to a minimal `init.lua` at `/etc/nvim/init.lua`. The Dockerfile creates this fallback at build time (no `COPY` of an `init.lua` file needed).
-- **tmux config**: Stored at `/etc/tmux/tmux.conf` (survives volume mounts on `/root`). Symlinked to `~/.tmux.conf` on first start. Includes mouse support, vi copy mode, and session renumber hooks.
-- **tmux plugins (TPM + tmux-yank)**: Cloned at build time to `/opt/tmux-plugins/`. Copied to `~/.tmux/plugins/` on first start. tmux-yank uses OSC 52 clipboard forwarding (`set-clipboard on`) so yanks work over SSH without `xsel`.
-- **tmux popup**: `prefix + s` runs `/etc/tmux/popup.sh` which opens a scratch session in a popup.
-- **tmux session renumbering**: Hooks on `session-created`, `session-closed`, and `session-renamed` run `/etc/tmux/renumber-sess.sh` to renumber numeric sessions sequentially.
-- **Idempotent zshrc modifications**: The script uses `grep -qxF` to check before appending, so repeated starts don't duplicate aliases.
-- **`tat` function**: Switches to or creates a tmux session by name. Behaves differently depending on whether already inside tmux.
-- **Branch-aware image tags**: Pushes to `main` produce `latest` and date-based (e.g. `2026.05.13`) tags. Pushes to `dev` produce `dev` and `dev-DATE` (e.g. `dev-2026.05.13`) tags.
-- **CI caching**: Uses `cache-from: type=gha` and `cache-to: type=gha,mode=max` for BuildKit cache via GitHub Actions.
-- **Crush (AI coding assistant)**: Installed from GitHub releases as a `.deb` package. Config lives at `/etc/crush/crush.json` (survives bind mounts on `/root`). The `CRUSH_GLOBAL_CONFIG` env var points to it.
-- **Crush uses Z.AI directly**: The zai provider connects to `https://api.z.ai/api/coding/paas/v4` using `$ZAI_API_KEY`. Pass `-e ZAI_API_KEY=your-key` at `docker run` to authenticate. Without it, Crush will fail to connect to the provider.
-- **Timezone**: The `TZ` env var defaults to `UTC`. Set it to any IANA timezone (e.g. `America/New_York`, `Europe/London`) via `-e TZ=...`. The entrypoint configures `/etc/localtime` and `/etc/timezone` at startup.
-- **Glow**: Installed from GitHub releases as a `.deb` package. Markdown renderer for the terminal.
+- **Root, home as workspace** — no `USER` directive, `WORKDIR=/root`, mount volume to persist.
+- **Configs in `/etc/`** — survive volume mounts on `/root` (tmux, Crush, nvim fallback).
+- **Tailscale**: `pkgs.tailscale.com` apt repo. Userspace networking (no `--cap-add`). State in `/var/lib/tailscale` volume. SSH via `--ssh` (needs Tailscale ACL). Runs unsupervised in background — crash kills SSH, not container. Socket poll up to 15s.
+- **tmux**: `/etc/tmux/tmux.conf` symlinked. Plugins at build → `/opt/tmux-plugins/`, copied at runtime. tmux-yank via OSC 52 (no `xsel`). Popup `prefix+s`. Renumber on create/close/rename.
+- **Neovim**: Runtime fetch from Gist, fallback `/etc/nvim/init.lua`. Gist URL hardcoded in `entrypoint.sh`.
+- **Crush**: `.deb` from GitHub releases. Config `/etc/crush/crush.json`. Z.AI provider with `$ZAI_API_KEY`.
+- **CI**: GHA BuildKit cache. Date tags (not semver) — same-day pushes overwrite. No `.dockerignore`.
 
 ## Preferences
 
-- When asked to commit, only commit — never push to remote unless asked.
-- When making changes to the project, always update AGENTS.md to keep it in sync.
-- Never include API keys or secrets in the repo — all keys must use `$ENV_VAR` shell expansion. Before staging or committing, scan staged files for hardcoded keys (long hex strings, bearer tokens, etc.) and reject if any are found.
+- Commit only, never push unless asked. Keep AGENTS.md in sync.
+- No hardcoded secrets — `$ENV_VAR` only. Scan staged files before committing.
 
 ## Gotchas
 
-- **`tailscaled` runs as a background process** — it's started with `&` in the entrypoint, not as a supervised service. If it crashes, Tailscale SSH will stop working. The container itself keeps running.
-- **Daemon startup waits for socket** — the entrypoint polls for `/var/run/tailscale/tailscaled.sock` for up to 15 seconds instead of a blind `sleep`.
-- No `.dockerignore` exists — the entire repo context is sent to the Docker daemon on build.
-- The image tag in CI is date-based (`YYYY.MM.DD`), not semver. Pushing to `main` on the same day overwrites the tag.
-- The neovim config Gist URL is hardcoded in `entrypoint.sh`.
-- Tailscale SSH requires an ACL policy in your Tailscale admin console that allows SSH access to the node. Without it, connections will be rejected even if the container is running.
-- **tmux-yank without `xsel`** — yanks go to tmux's internal buffer + OSC 52 (works with most modern terminals over SSH). Won't work with terminals that don't support OSC 52 (e.g. minimal terminals, some older PuTTY builds).
+- `tailscaled` unsupervised — crash breaks SSH only. Socket poll 15s (not `sleep`).
+- No `.dockerignore` — full context on every build.
+- Same-day pushes overwrite date tag.
+- Neovim Gist URL hardcoded.
+- Tailscale SSH needs ACL policy in admin console.
+- tmux-yank OSC 52 only — no support in some terminals (e.g. older PuTTY).
