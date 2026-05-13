@@ -14,6 +14,7 @@ The image is published to `ghcr.io` on every push to `main` for both `linux/amd6
 | Run container | `docker run -it --rm dockerized-env` |
 | Run with workspace mount | `docker run -it --rm -v dev-env-home:/root dockerized-env` |
 | Run with Tailscale SSH | `docker run -it --rm -v dev-env-home:/root -v tailscale-state:/var/lib/tailscale -e TS_AUTHKEY=tskey-auth-xxxxx -e TS_HOSTNAME=my-dev-env dockerized-env` |
+| Run with timezone | `docker run -it --rm -e TZ=America/New_York dockerized-env` |
 | Run with Crush + Tailscale SSH | `docker run -it --rm -v dev-env-home:/root -v tailscale-state:/var/lib/tailscale -e ZAI_API_KEY=your-key -e TS_AUTHKEY=tskey-auth-xxxxx -e TS_HOSTNAME=my-dev-env dockerized-env` |
 | Multi-platform build (needs buildx + QEMU) | `docker buildx build --platform linux/amd64,linux/arm64 -t dockerized-env .` |
 
@@ -35,7 +36,8 @@ skills/                           → Crush agent skills (copied to /etc/agents/
 
 **Startup flow:**
 1. `entrypoint.sh` runs as entrypoint (container runs as root)
-2. Bootstraps `.zshrc` from Oh My Zsh template if missing
+2. Sets timezone from `TZ` env var (defaults to `UTC`)
+3. Bootstraps `.zshrc` from Oh My Zsh template if missing
 3. Symlinks `~/.tmux.conf` → `/etc/tmux/tmux.conf` if not present
 4. Copies TPM + tmux-yank to `~/.tmux/plugins/` if not present (pre-installed at build time in `/opt/tmux-plugins/`)
 5. Copies Crush agent skills to `~/.config/agents/skills/`
@@ -64,6 +66,7 @@ skills/                           → Crush agent skills (copied to /etc/agents/
 - **CI caching**: Uses `cache-from: type=gha` and `cache-to: type=gha,mode=max` for BuildKit cache via GitHub Actions.
 - **Crush (AI coding assistant)**: Installed from GitHub releases as a `.deb` package. Config lives at `/etc/crush/crush.json` (survives bind mounts on `/root`). The `CRUSH_GLOBAL_CONFIG` env var points to it.
 - **Crush uses Z.AI directly**: The zai provider connects to `https://api.z.ai/api/coding/paas/v4` using `$ZAI_API_KEY`. Pass `-e ZAI_API_KEY=your-key` at `docker run` to authenticate. Without it, Crush will fail to connect to the provider.
+- **Timezone**: The `TZ` env var defaults to `UTC`. Set it to any IANA timezone (e.g. `America/New_York`, `Europe/London`) via `-e TZ=...`. The entrypoint configures `/etc/localtime` and `/etc/timezone` at startup.
 - **Glow**: Installed from GitHub releases as a `.deb` package. Markdown renderer for the terminal.
 
 ## Preferences

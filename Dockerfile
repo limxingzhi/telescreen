@@ -4,6 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm-256color
 ENV EDITOR=nvim
 ENV VISUAL=nvim
+ENV TZ=UTC
 
 # Tailscale
 RUN curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null \
@@ -25,6 +26,7 @@ RUN apt-get update && apt-get install -y \
     fd-find \
     build-essential \
     ca-certificates \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 # Install neovim from GitHub releases (newer than Debian bookworm)

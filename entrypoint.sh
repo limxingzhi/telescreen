@@ -8,6 +8,12 @@ TMUX_CONFIG="$HOME/.tmux.conf"
 TS_STATE_DIR=/var/lib/tailscale
 TS_SOCKET=/var/run/tailscale/tailscaled.sock
 
+# Set timezone if TZ is provided
+if [ -n "${TZ:-}" ]; then
+    ln -snf /usr/share/zoneinfo/"$TZ" /etc/localtime
+    echo "$TZ" > /etc/timezone
+fi
+
 # Bootstrap .zshrc if missing (Oh My Zsh template from /opt)
 if [ ! -f "$ZSHRC" ]; then
   cp /opt/oh-my-zsh/templates/zshrc.zsh-template "$ZSHRC"
