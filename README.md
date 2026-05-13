@@ -12,16 +12,16 @@ A cute, opinionated dev environment in a container. One `docker run` and you get
 
 | Tool | Why you'll love it |
 |------|--------------------|
-| **[Crush](https://github.com/charmbracelet/crush)** | An adorable AI coding assistant that lives in your terminal. Ask it to build, refactor, debug, it just does it. |
+| **[Crush](https://github.com/charmbracelet/crush)** | An adorable AI coding assistant that lives in your terminal. Ask it to build, refactor, debug — it just does it. |
 | **Oh My Zsh** | Pretty prompts, sensible defaults, and a warm fuzzy feeling every time you open a shell. |
 | **Tailscale SSH** | Connect from anywhere on your tailnet with `ssh root@my-dev-env`. No SSH keys to manage, no ports to expose, no networking headaches. |
-| **Neovim** | The latest release. Auto-fetches a config from a Gist on every start, or mount your own. |
-| **tmux** | Persistent sessions. Detach, reattach, split panes, and pretend you're a hacker in a movie. |
-| **lazygit** | Git but make it fun. Staging, committing, rebasing, diffing, all from a gorgeous TUI. |
-| **Node.js 24 + TypeScript** | `tsc`, `ts-node`, `tsx`, `eslint`, `http-server` and others |
+| **Neovim** | The latest release. Auto-fetches a config from a Gist on first start, or mount your own. |
+| **tmux** | Persistent sessions with mouse support, vi copy mode, yank-to-clipboard, and a scratch popup. |
+| **lazygit** | Git but make it fun. Staging, committing, rebasing, diffing — all from a gorgeous TUI. |
+| **Node.js 24 + TypeScript** | `tsc`, `ts-node`, `tsx`, `eslint`, `http-server` and more. |
 | **Deno** | Because why not have a second runtime? |
 | **[Glow](https://github.com/charmbracelet/glow)** | Read markdown files right in your terminal, beautifully rendered. `glow README.md` and swoon. |
-| **ripgrep, fd, fzf, jq** | Commonly used linux utils. |
+| **ripgrep, fd, fzf, jq** | The holy quaternity of "wait, that was fast." |
 | **git** | Obviously. |
 
 ## Quick start
@@ -64,9 +64,6 @@ docker run -it --rm \
   -e TS_AUTHKEY=tskey-auth-xxxxx \
   -e TS_HOSTNAME=my-dev-env \
   dev-env
-
-volumes:
-  ws_01_ts_state:
 ```
 
 Then from any device on your tailnet:
@@ -79,28 +76,24 @@ State is persisted in the `tailscale-state` volume — omit `TS_AUTHKEY` on subs
 
 ## Using Crush
 
-Then just run `crush` and start chatting. Config lives in your /root path, so it will persist between reboots.
+Run `crush` and start chatting.
 
-## Environment Variables
+## Neovim config
 
-| Variable | Description |
-|----------|-------------|
-| `TS_AUTHKEY` | Tailscale auth key. Required on first run; optional after that if state is persisted. Generate one at [tailscale.com/admin/settings/keys](https://login.tailscale.com/admin/settings/keys). |
-| `TS_HOSTNAME` | Hostname for the Tailscale node (e.g. `my-dev-env` → SSH via `ssh root@my-dev-env`) |
-
-## Crush (AI Coding Assistant)
-
-The image includes [Crush](https://github.com/charmbracelet/crush) — an cute looking AI coding assistant.
-
-## Neovim Config
-
-On startup, the container fetches a neovim config from a [GitHub Gist](https://gist.github.com/limxingzhi/fa3be5045caded9d4e09f2423dbfcec7). If the fetch fails, it falls back to a default config bundled in the image.
-
-To use your own config, mount it:
+On first start, the container fetches a config from a [GitHub Gist](https://gist.github.com/limxingzhi/fa3be5045caded9d4e09f2423dbfcec7). If the fetch fails, it falls back to a minimal default. Mount your own to override:
 
 ```sh
 docker run -it --rm -v ./my-init.lua:/root/.config/nvim/init.lua dev-env
 ```
+
+## tmux
+
+Comes pre-configured with:
+
+- **Mouse support** — click, scroll, select panes
+- **Vi copy mode** — `prefix + [` to enter, `v` to select, `y` to yank (copies to your terminal's clipboard via OSC 52)
+- **Scratch popup** — `prefix + s` opens a scratch tmux session in a popup
+- **Session renumbering** — numeric sessions are auto-renumbered when created/closed/renamed
 
 ## docker-compose
 
@@ -134,6 +127,13 @@ Built into every shell:
 | `nr` | `npm run` |
 | `tat <name>` | Switch to or create a tmux session by name |
 
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `TS_AUTHKEY` | Tailscale auth key. Required on first run; optional after that if state is persisted. |
+| `TS_HOSTNAME` | Hostname for the Tailscale node (e.g. `my-dev-env` → SSH via `ssh root@my-dev-env`) |
+
 ## Multi-architecture
 
 Images are built for **linux/amd64** and **linux/arm64** and published to GHCR on every push to `main`.
@@ -145,3 +145,4 @@ Images are built for **linux/amd64** and **linux/arm64** and published to GHCR o
 - Tailscale uses **userspace networking** — no `--cap-add` or special permissions needed
 - Tailscale SSH requires an [ACL policy](https://login.tailscale.com/admin/acls) allowing SSH access
 - Image tags: `latest` + date-based (`YYYY.MM.DD`)
+- tmux plugins (TPM + tmux-yank) are pre-installed at build time and linked on first start
