@@ -14,6 +14,7 @@ The image is published to `ghcr.io` on every push to `main` for both `linux/amd6
 | Run container | `docker run -it --rm dockerized-env` |
 | Run with workspace mount | `docker run -it --rm -v dev-env-home:/root dockerized-env` |
 | Run with Tailscale SSH | `docker run -it --rm -v dev-env-home:/root -v tailscale-state:/var/lib/tailscale -e TS_AUTHKEY=tskey-auth-xxxxx -e TS_HOSTNAME=my-dev-env dockerized-env` |
+| Run with Crush + Tailscale SSH | `docker run -it --rm -v dev-env-home:/root -v tailscale-state:/var/lib/tailscale -e ZAI_API_KEY=your-key -e TS_AUTHKEY=tskey-auth-xxxxx -e TS_HOSTNAME=my-dev-env dockerized-env` |
 | Multi-platform build (needs buildx + QEMU) | `docker buildx build --platform linux/amd64,linux/arm64 -t dockerized-env .` |
 
 There is no test suite, linting, or CI beyond the publish workflow.
@@ -23,6 +24,7 @@ There is no test suite, linting, or CI beyond the publish workflow.
 ```
 Dockerfile                        → Defines the image (base image, Tailscale, apt packages, Crush, Glow, Oh My Zsh, TypeScript, Deno, tmux plugins, env vars, entrypoint)
 entrypoint.sh                     → Runs on every container start (starts Tailscale, links tmux config, copies tmux plugins, fetches neovim config, writes shell aliases)
+crush/crush.json                  → Crush global config (uses zai provider with $ZAI_API_KEY, installed at /etc/crush/crush.json)
 tmux/tmux.conf                    → tmux config with mouse, vi copy mode, tmux-yank, popup, session renumber hooks
 tmux/popup.sh                     → Opens a scratch tmux session in a popup (bound to prefix+s)
 tmux/renumber-sess.sh             → Renumbers numeric tmux sessions sequentially
@@ -60,13 +62,15 @@ skills/                           → Crush agent skills (copied to /etc/agents/
 - **`tat` function**: Switches to or creates a tmux session by name. Behaves differently depending on whether already inside tmux.
 - **CI uses lowercase repo name**: The publish workflow lowercases `github.repository` to ensure valid GHCR image names.
 - **CI caching**: Uses `cache-from: type=gha` and `cache-to: type=gha,mode=max` for BuildKit cache via GitHub Actions.
-- **Crush (AI coding assistant)**: Installed from GitHub releases as a `.deb` package.
+- **Crush (AI coding assistant)**: Installed from GitHub releases as a `.deb` package. Config lives at `/etc/crush/crush.json` (survives bind mounts on `/root`). The `CRUSH_GLOBAL_CONFIG` env var points to it.
+- **Crush uses Z.AI directly**: The zai provider connects to `https://api.z.ai/api/coding/paas/v4` using `$ZAI_API_KEY`. Pass `-e ZAI_API_KEY=your-key` at `docker run` to authenticate. Without it, Crush will fail to connect to the provider.
 - **Glow**: Installed from GitHub releases as a `.deb` package. Markdown renderer for the terminal.
 
 ## Preferences
 
 - When asked to commit, only commit — never push to remote unless asked.
 - When making changes to the project, always update AGENTS.md to keep it in sync.
+- Never include API keys or secrets in the repo — all keys must use `$ENV_VAR` shell expansion. Before staging or committing, scan staged files for hardcoded keys (long hex strings, bearer tokens, etc.) and reject if any are found.
 
 ## Gotchas
 

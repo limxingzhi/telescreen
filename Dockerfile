@@ -100,6 +100,10 @@ VOLUME /var/lib/tailscale
 # Agent skills (outside /root so it survives bind mounts)
 COPY skills/ /etc/agents/skills/
 
+# Crush config (outside /root so it survives bind mounts)
+COPY crush/crush.json /etc/crush/crush.json
+ENV CRUSH_GLOBAL_CONFIG=/etc/crush/crush.json
+
 # Shell config (outside /root so it survives bind mounts)
 COPY zsh/aliases.zsh /etc/zsh/aliases.zsh
 

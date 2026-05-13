@@ -76,7 +76,13 @@ State is persisted in the `tailscale-state` volume — omit `TS_AUTHKEY` on subs
 
 ## Using Crush
 
-Run `crush` and start chatting.
+Crush uses [Z.AI](https://z.ai) directly (no gateway). Pass your API key at runtime:
+
+```sh
+docker run -it --rm -v dev-env-home:/root -e ZAI_API_KEY=your-key dev-env
+```
+
+Then just run `crush` and start chatting.
 
 ## Neovim config
 
@@ -110,6 +116,7 @@ services:
     environment:
       - TS_AUTHKEY=tskey-auth-keygoeshere
       - TS_HOSTNAME=my-dev-env
+      - ZAI_API_KEY=your-zai-api-key
     network_mode: host
 
 volumes:
@@ -133,6 +140,7 @@ Built into every shell:
 |----------|-------------|
 | `TS_AUTHKEY` | Tailscale auth key. Required on first run; optional after that if state is persisted. |
 | `TS_HOSTNAME` | Hostname for the Tailscale node (e.g. `my-dev-env` → SSH via `ssh root@my-dev-env`) |
+| `ZAI_API_KEY` | Z.AI API key for Crush. Required for AI features. Get one at [z.ai](https://z.ai). |
 
 ## Multi-architecture
 

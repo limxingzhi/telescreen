@@ -1,0 +1,15 @@
+{
+  "$schema": "https://charm.land/crush.json",
+  "models": {
+    "large": {
+      "model": "glm-5.1",
+      "provider": "zai",
+      "think": true,
+      "max_tokens": 65536
+    },
+    "small": {
+      "model": "glm-4.7-flash",
+      "provider": "zai"
+    }
+  }
+}
