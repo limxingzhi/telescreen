@@ -3,21 +3,33 @@
 A cute, opinionated dev environment in a container. One `docker run` and you get a fully-loaded workspace with all your favorite CLI tools.
 
 <p align="center">
-  <img src="screenshot.jpg" alt="tmux with Crush and lazygit side by side" width="720" />
+  <img src="screenshots/screenshot1 - running crush in tmux.jpg" alt="Running Crush in tmux" />
 </p>
 
-> tmux doing what tmux does best — Crush and lazygit running side by side like they were meant to be.
+> Crush running inside tmux - just run `crush` and start chatting.
+
+<p align="center">
+  <img src="screenshots/screenshot2 - running nvim in a scratch session.jpg" alt="Neovim in a scratch popup session" />
+</p>
+
+> Neovim in a scratch popup session - `prefix+s` opens a scratch workspace on demand.
+
+<p align="center">
+  <img src="screenshots/screenshot3 - running crush and lazygit in panes.jpg" alt="Crush and lazygit side by side" />
+</p>
+
+> Crush and lazygit in split panes - `prefix+%` to split vertically, then run `lazygit` in the new pane.
 
 ## What's inside
 
 | Tool | Why you'll love it |
 |------|--------------------|
-| **[Crush](https://github.com/charmbracelet/crush)** | An adorable AI coding assistant that lives in your terminal. Ask it to build, refactor, debug — it just does it. |
+| **[Crush](https://github.com/charmbracelet/crush)** | An adorable AI coding assistant that lives in your terminal. Ask it to build, refactor, debug - it just does it. |
 | **Oh My Zsh** | Pretty prompts, sensible defaults, and a warm fuzzy feeling every time you open a shell. |
 | **Tailscale SSH** | Connect from anywhere on your tailnet with `ssh root@my-dev-env`. No SSH keys to manage, no ports to expose, no networking headaches. |
 | **Neovim** | The latest release. Auto-fetches a config from a Gist on first start, or mount your own. |
 | **tmux** | Persistent sessions with mouse support, vi copy mode, yank-to-clipboard, and a scratch popup. |
-| **lazygit** | Git but make it fun. Staging, committing, rebasing, diffing — all from a gorgeous TUI. |
+| **lazygit** | Git but make it fun. Staging, committing, rebasing, diffing - all from a gorgeous TUI. |
 | **Node.js 24 + TypeScript** | `tsc`, `ts-node`, `tsx`, `eslint`, `http-server` and more. |
 | **Deno** | Because why not have a second runtime? |
 | **LSP support** | Crush ships with language servers for TypeScript, Deno, and Bash. |
@@ -49,10 +61,10 @@ docker run -it --rm \
   dev-env
 ```
 
-- **`~/.ssh`** — your SSH key for authenticating with GitHub, GitLab, etc. Mounted read-only so the container can't modify it.
-- **`~/.gitconfig`** — your name, email, and any git preferences. Without this, commits will use default/generic values.
+- **`~/.ssh`** - your SSH key for authenticating with GitHub, GitLab, etc. Mounted read-only so the container can't modify it.
+- **`~/.gitconfig`** - your name, email, and any git preferences. Without this, commits will use default/generic values.
 
-Both are optional — the container works fine without them for local-only work.
+Both are optional - the container works fine without them for local-only work.
 
 ## SSH from anywhere with Tailscale
 
@@ -73,7 +85,7 @@ Then from any device on your tailnet:
 ssh root@my-dev-env
 ```
 
-State is persisted in the `tailscale-state` volume — omit `TS_AUTHKEY` on subsequent runs.
+State is persisted in the `tailscale-state` volume - omit `TS_AUTHKEY` on subsequent runs.
 
 ## Using Crush
 
@@ -95,12 +107,64 @@ docker run -it --rm -v ./my-init.lua:/root/.config/nvim/init.lua dev-env
 
 ## tmux
 
-Comes pre-configured with:
+### Keybindings
 
-- **Mouse support** — click, scroll, select panes
-- **Vi copy mode** — `prefix + [` to enter, `v` to select, `y` to yank (copies to your terminal's clipboard via OSC 52)
-- **Scratch popup** — `prefix + s` opens a scratch tmux session in a popup
-- **Session renumbering** — numeric sessions are auto-renumbered when created/closed/renamed
+| Shortcut | Action |
+|----------|--------|
+| `prefix + s` | Open a scratch popup session (toggle) |
+| `prefix + h/j/k/l` | Navigate between panes (vi-style) |
+| `prefix + [` | Enter vi copy mode (`v` to select, `y` to yank to clipboard) |
+| `prefix + =` | Evenly split panes horizontally |
+| `prefix + %` | Split pane vertically |
+| `prefix + "` | Split pane horizontally |
+
+### Scratch sessions
+
+`prefix + s` opens a scratch tmux session in a popup - a throwaway workspace for quick experiments, running tests, editing notes, etc. The scratch is tied to your current session (e.g. session `main` gets `scratch-main`), so it persists across popup toggles. A `*` appears in the status bar (before the hostname) when a scratch session exists.
+
+### Session management with `tat`
+
+The `tat <name>` function switches to a tmux session by name - creating it if it doesn't exist:
+
+- Outside tmux: attaches or creates the session
+- Inside tmux: switches clients or creates + switches
+
+Sessions with numeric names are auto-renumbered when created, closed, or renamed.
+
+## Workflows
+
+### Vibe coding with AI review
+
+The core loop: Crush builds the code, lazygit reviews the changes, nvim steps in for manual edits - all inside tmux.
+
+1. Clone a repo and open it in a tmux session: `tat my-project`
+2. Run `crush` and describe what you want built
+3. Split a pane (`prefix + %`) and run `lazygit` to review diffs, stage, and commit
+4. Open `nvim` when you need to hand-edit something, or use the scratch popup (`prefix + s`) for quick notes
+
+### Disposable package maintenance
+
+No local copies of repos on your machine. Clone into the container, do the work, push, destroy the container.
+
+```sh
+docker run -it --rm \
+  -v dev-env-home:/root \
+  -v ~/.ssh:/root/.ssh:ro \
+  -v ~/.gitconfig:/root/.gitconfig:ro \
+  ghcr.io/limxingzhi/dockerized-env:latest
+```
+
+Clone the package, bump versions, publish, then `docker rm` and it's like you were never there. Home volume persists your shell history and tool configs - not the repos.
+
+### LeetCode practice
+
+Split a pane: nvim on the left for writing solutions, `npx tsx solution.ts` on the right to run them.
+
+```
+prefix + %    ← split vertically
+nvim          ← left pane
+npx tsx foo   ← right pane
+```
 
 ## docker-compose
 
@@ -149,9 +213,9 @@ Images are built for **linux/amd64** and **linux/arm64** and published to GHCR o
 
 ## Notes
 
-- Designed to be disposable — safe to rebuild anytime
+- Designed to be disposable - safe to rebuild anytime
 - Two volumes: `/root` (workspace + configs), `/var/lib/tailscale` (Tailscale state)
-- Tailscale uses **userspace networking** — no `--cap-add` or special permissions needed
+- Tailscale uses **userspace networking** - no `--cap-add` or special permissions needed
 - Tailscale SSH requires an [ACL policy](https://login.tailscale.com/admin/acls) allowing SSH access
 - Image tags: `latest` + date-based (`YYYY.MM.DD`)
 - tmux plugins (TPM + tmux-yank) are pre-installed at build time and linked on first start

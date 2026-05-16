@@ -4,7 +4,7 @@
 
 Docker dev environment on `node:24-bookworm`: neovim, tmux, lazygit, TypeScript, Oh My Zsh, Crush, Glow, Tailscale SSH. Published to `ghcr.io` for `linux/amd64`+`linux/arm64`. No tests or linting.
 
-**Branch tags**: `main` → `latest` + `YYYY.MM.DD` | `dev` → `dev` + `dev-YYYY.MM.DD`
+**Branch tags**: `main` -> `latest` + `YYYY.MM.DD` | `dev` -> `dev` + `dev-YYYY.MM.DD`
 
 ## Commands
 
@@ -18,43 +18,50 @@ Docker dev environment on `node:24-bookworm`: neovim, tmux, lazygit, TypeScript,
 | Crush | `-e ZAI_API_KEY=your-key` |
 | Multi-arch | `docker buildx build --platform linux/amd64,linux/arm64 -t dockerized-env .` |
 
+No test suite, no linter. Verify changes with `docker build`.
+
 ## Architecture
 
 ```
-Dockerfile                    → Image (packages, Crush, Glow, Oh My Zsh, TS, Deno, tmux plugins, entrypoint)
-entrypoint.sh                 → Runtime: Tailscale, tmux, plugins, neovim config, aliases
-crush/crush.json              → Crush config (zai provider, $ZAI_API_KEY, LSPs) → /etc/crush/crush.json
-tmux/tmux.conf                → Mouse, vi copy, tmux-yank, popup, renumber hooks
-tmux/popup.sh                 → Scratch popup (prefix+s)
-tmux/renumber-sess.sh         → Renumber numeric sessions
-tmux/session-status.sh        → Status-right: * before hostname if scratch- session exists
-init.zsh                      → Shell env (EDITOR, aliases, tat fn), sourced from .zshrc
-skills/                       → Crush skills → /etc/agents/skills/
-.github/workflows/publish.yml → Multi-arch GHCR publish
+Dockerfile
+  ├─ entrypoint.sh          → Runtime orchestrator (runs as root)
+  │    ├─ sets TZ
+  │    ├─ bootstraps .zshrc → sources init.zsh
+  │    ├─ symlinks tmux.conf → /etc/tmux/tmux.conf
+  │    ├─ copies plugins    → /opt/tmux-plugins/ → ~/.tmux/plugins/
+  │    ├─ copies skills     → /etc/agents/skills/
+  │    ├─ fetches nvim config from Gist (fallback /etc/nvim/init.lua)
+  │    ├─ starts tailscaled if TS_AUTHKEY set
+  │    ├─ appends aliases (idempotent)
+  │    └─ exec "$@" (zsh)
+  │
+  ├─ crush/crush.json       → /etc/crush/crush.json (zai provider, $ZAI_API_KEY, LSPs)
+  ├─ init.zsh               → Shell env (EDITOR, aliases, tat fn)
+  ├─ tmux/
+  │    ├─ tmux.conf         → /etc/tmux/tmux.conf (mouse, vi copy, yank, popup, renumber)
+  │    ├─ popup.sh          → Scratch popup (prefix+s)
+  │    ├─ session-status.sh → Status-right: * before hostname if scratch exists
+  │    └─ renumber-sess.sh  → Renumber numeric sessions
+  ├─ skills/                → /etc/agents/skills/
+  └─ .github/workflows/publish.yml → Multi-arch GHCR publish
 ```
 
-**Startup** (runs as root): set TZ → bootstrap `.zshrc` → symlink tmux.conf → copy plugins from `/opt/tmux-plugins/` → copy Crush skills → fetch neovim config from Gist (fallback `/etc/nvim/init.lua`) → start `tailscaled` if `TS_AUTHKEY` set → append aliases (idempotent) → `exec "$@"` (zsh)
-
-## Key Details
-
-- **Root, home as workspace** — no `USER` directive, `WORKDIR=/root`, mount volume to persist.
-- **Configs in `/etc/`** — survive volume mounts on `/root` (tmux, Crush, nvim fallback).
-- **Tailscale**: `pkgs.tailscale.com` apt repo. Userspace networking (no `--cap-add`). State in `/var/lib/tailscale` volume. SSH via `--ssh` (needs Tailscale ACL). Runs unsupervised in background — crash kills SSH, not container. Socket poll up to 15s.
-- **tmux**: `/etc/tmux/tmux.conf` symlinked. Plugins at build → `/opt/tmux-plugins/`, copied at runtime. tmux-yank via OSC 52 (no `xsel`). Popup `prefix+s`. Renumber on create/close/rename.
-- **Neovim**: Runtime fetch from Gist, fallback `/etc/nvim/init.lua`. Gist URL hardcoded in `entrypoint.sh`.
-- **Crush**: `.deb` from GitHub releases. Config `/etc/crush/crush.json`. Z.AI provider with `$ZAI_API_KEY`. LSPs for TypeScript, Deno, and Bash.
-- **CI**: GHA BuildKit cache. Date tags (not semver) — same-day pushes overwrite. No `.dockerignore`.
+Configs live in `/etc/` so they survive volume mounts on `/root`.
 
 ## Preferences
 
 - Commit only, never push unless asked. Keep AGENTS.md in sync.
-- No hardcoded secrets — `$ENV_VAR` only. Scan staged files before committing.
+- No hardcoded secrets - `$ENV_VAR` only. Scan staged files before committing.
+- Commit messages: lowercase, imperative, no period (e.g. `add scratch session indicator`).
+- Follow existing file naming and code style. Match what's already there.
 
 ## Gotchas
 
-- `tailscaled` unsupervised — crash breaks SSH only. Socket poll 15s (not `sleep`).
-- No `.dockerignore` — full context on every build.
+- `tailscaled` unsupervised - crash breaks SSH only, not the container. Socket poll up to 15s.
+- No `.dockerignore` - full build context sent on every build.
 - Same-day pushes overwrite date tag.
-- Neovim Gist URL hardcoded.
+- Neovim Gist URL hardcoded in `entrypoint.sh`.
 - Tailscale SSH needs ACL policy in admin console.
-- tmux-yank OSC 52 only — no support in some terminals (e.g. older PuTTY).
+- tmux-yank OSC 52 only - no clipboard support in some terminals.
+- tmux plugins pre-installed at build time (TPM + tmux-yank), linked on first start.
+- Scratch sessions (`scratch-*`) are persistent - they survive popup close, not killed automatically.
