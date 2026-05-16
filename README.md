@@ -1,4 +1,4 @@
-# 🐳 dockerized-env
+# 📺 telescreen
 
 A cute, opinionated dev environment in a container. One `docker run` and you get a fully-loaded workspace with all your favorite CLI tools.
 
@@ -151,7 +151,7 @@ docker run -it --rm \
   -v dev-env-home:/root \
   -v ~/.ssh:/root/.ssh:ro \
   -v ~/.gitconfig:/root/.gitconfig:ro \
-  ghcr.io/limxingzhi/dockerized-env:latest
+  ghcr.io/limxingzhi/telescreen:latest
 ```
 
 Clone the package, bump versions, publish, then `docker rm` and it's like you were never there. Home volume persists your shell history and tool configs - not the repos.
@@ -171,7 +171,7 @@ npx tsx foo   ← right pane
 ```yaml
 services:
   workspace:
-    image: ghcr.io/limxingzhi/dockerized-env:latest
+    image: ghcr.io/limxingzhi/telescreen:latest
     container_name: workspace
     volumes:
       - dev-home:/root
@@ -219,3 +219,11 @@ Images are built for **linux/amd64** and **linux/arm64** and published to GHCR o
 - Tailscale SSH requires an [ACL policy](https://login.tailscale.com/admin/acls) allowing SSH access
 - Image tags: `latest` + date-based (`YYYY.MM.DD`)
 - tmux plugins (TPM + tmux-yank) are pre-installed at build time and linked on first start
+
+---
+
+> *The telescreen received and transmitted simultaneously. Any sound that Winston made, above the level of a very low whisper, would be picked up by it; moreover, so long as he remained within the field of vision which the metal plaque commanded, he could be seen as well as heard. There was of course no way of knowing whether you were being watched at any given moment.*
+>
+> — George Orwell, *1984*
+
+Might as well have good tools.

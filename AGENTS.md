@@ -10,13 +10,13 @@ Docker dev environment on `node:24-bookworm`: neovim, tmux, lazygit, TypeScript,
 
 | Action | Command |
 |--------|---------|
-| Build | `docker build -t dockerized-env .` |
-| Run | `docker run -it --rm dockerized-env` |
-| Persistent home | `docker run -it --rm -v dev-env-home:/root dockerized-env` |
+| Build | `docker build -t telescreen .` |
+| Run | `docker run -it --rm telescreen` |
+| Persistent home | `docker run -it --rm -v dev-env-home:/root telescreen` |
 | Timezone | `-e TZ=America/New_York` |
 | Tailscale SSH | `-v tailscale-state:/var/lib/tailscale -e TS_AUTHKEY=tskey-auth-xxx -e TS_HOSTNAME=my-dev-env` |
 | Crush | `-e ZAI_API_KEY=your-key` |
-| Multi-arch | `docker buildx build --platform linux/amd64,linux/arm64 -t dockerized-env .` |
+| Multi-arch | `docker buildx build --platform linux/amd64,linux/arm64 -t telescreen .` |
 
 No test suite, no linter. Verify changes with `docker build`.
 
