@@ -50,19 +50,6 @@ for item in /etc/agents/skills/*; do
     fi
 done
 
-mkdir -p "$NVIM_CONFIG_DIR"
-if [ ! -f "$NVIM_CONFIG" ]; then
-    echo "Fetching Neovim config from Gist..."
-    if curl -fsSL https://gist.github.com/limxingzhi/fa3be5045caded9d4e09f2423dbfcec7/raw -o "$NVIM_CONFIG" 2>/dev/null; then
-        echo "Config fetched successfully"
-    else
-        echo "Gist fetch failed, using default config"
-        cp /etc/nvim/init.lua "$NVIM_CONFIG"
-    fi
-else
-    echo "Using existing Neovim config"
-fi
-
 # Start Tailscale if auth key is provided
 if [ -n "${TS_AUTHKEY:-}" ]; then
     echo "Starting Tailscale..."
@@ -115,6 +102,20 @@ if [ -n "${TS_AUTHKEY:-}" ]; then
             echo "Tailscale connected (userspace mode, SSH enabled)"
         fi
     fi
+fi
+
+
+mkdir -p "$NVIM_CONFIG_DIR"
+if [ ! -f "$NVIM_CONFIG" ]; then
+    echo "Fetching Neovim config from Gist..."
+    if curl -fsSL https://gist.github.com/limxingzhi/fa3be5045caded9d4e09f2423dbfcec7/raw -o "$NVIM_CONFIG" 2>/dev/null; then
+        echo "Config fetched successfully"
+    else
+        echo "Gist fetch failed, using default config"
+        cp /etc/nvim/init.lua "$NVIM_CONFIG"
+    fi
+else
+    echo "Using existing Neovim config"
 fi
 
 grep -qxF 'source /etc/zsh/init.zsh' "$ZSHRC" 2>/dev/null || echo 'source /etc/zsh/init.zsh' >> "$ZSHRC"
