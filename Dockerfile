@@ -73,7 +73,7 @@ RUN ARCH=$(uname -m) && \
     rm /tmp/glow.deb
 
 # TypeScript tooling
-RUN npm install -g npm@latest typescript typescript-language-server ts-node tsx http-server eslint bash-language-server
+RUN npm install -g npm@latest typescript typescript-language-server ts-node tsx http-server eslint bash-language-server markserv
 
 # Install Deno
 RUN curl -fsSL https://deno.land/install.sh | sh \
