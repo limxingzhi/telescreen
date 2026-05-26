@@ -1,5 +1,10 @@
 FROM node:24-bookworm
 
+ARG NVIM_VERSION=v0.12.2
+ARG LAZYGIT_VERSION=v0.61.1
+ARG CRUSH_VERSION=v0.72.0
+ARG GLOW_VERSION=v2.1.2
+
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm-256color
 ENV TZ=UTC
@@ -31,7 +36,6 @@ RUN apt-get update && apt-get install -y \
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then NV_ARCH="linux-arm64"; \
     else NV_ARCH="linux-x86_64"; fi && \
-    NVIM_VERSION=$(curl -s https://api.github.com/repos/neovim/neovim/releases/latest | grep tag_name | cut -d '"' -f 4) && \
     curl -Lo nvim.tar.gz "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-${NV_ARCH}.tar.gz" && \
     tar -xzf nvim.tar.gz && \
     mv nvim-${NV_ARCH} /opt/nvim && \
@@ -45,7 +49,6 @@ RUN ARCH=$(uname -m) && \
     else \
         LG_ARCH="x86_64"; \
     fi && \
-    LAZYGIT_VERSION=$(curl -s https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep tag_name | cut -d '"' -f 4) && \
     curl -Lo lazygit.tar.gz \
     https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION#v}_Linux_${LG_ARCH}.tar.gz && \
     tar -xzf lazygit.tar.gz lazygit && \
@@ -56,7 +59,6 @@ RUN ARCH=$(uname -m) && \
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then CRUSH_ARCH="arm64"; \
     else CRUSH_ARCH="amd64"; fi && \
-    CRUSH_VERSION=$(curl -s https://api.github.com/repos/charmbracelet/crush/releases/latest | grep tag_name | cut -d '"' -f 4) && \
     curl -Lo /tmp/crush.deb \
       "https://github.com/charmbracelet/crush/releases/download/${CRUSH_VERSION}/crush_${CRUSH_VERSION#v}_${CRUSH_ARCH}.deb" && \
     dpkg -i /tmp/crush.deb && \
@@ -66,14 +68,13 @@ RUN ARCH=$(uname -m) && \
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then GLOW_ARCH="arm64"; \
     else GLOW_ARCH="amd64"; fi && \
-    GLOW_VERSION=$(curl -s https://api.github.com/repos/charmbracelet/glow/releases/latest | grep tag_name | cut -d '"' -f 4) && \
     curl -Lo /tmp/glow.deb \
       "https://github.com/charmbracelet/glow/releases/download/${GLOW_VERSION}/glow_${GLOW_VERSION#v}_${GLOW_ARCH}.deb" && \
     dpkg -i /tmp/glow.deb && \
     rm /tmp/glow.deb
 
 # TypeScript tooling
-RUN npm install -g npm@latest typescript typescript-language-server ts-node tsx http-server eslint bash-language-server markserv
+RUN npm install -g npm typescript typescript-language-server ts-node tsx http-server eslint bash-language-server markserv
 
 # Install Deno
 RUN curl -fsSL https://deno.land/install.sh | sh \
