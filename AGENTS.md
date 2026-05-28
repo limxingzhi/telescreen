@@ -41,7 +41,9 @@ Dockerfile
   │    ├─ appends aliases (idempotent)
   │    └─ exec "$@" (zsh)
   │
-  ├─ crush/crush.json       → /etc/crush/crush.json (zai provider, $ZAI_API_KEY, LSPs)
+  ├─ crush/
+  │    ├─ crush.json         → /etc/crush/crush.json (zai provider, $ZAI_API_KEY, LSPs)
+  │    └─ AGENTS.md          → /etc/crush/AGENTS.md (global prefs loaded via context_paths)
   ├─ init.zsh               → Shell env (EDITOR, aliases, tat fn)
   ├─ tmux/
   │    ├─ tmux.conf         → /etc/tmux/tmux.conf (mouse, vi copy, yank, popup, renumber)
@@ -57,10 +59,9 @@ Configs live in `/etc/` so they survive volume mounts on `/root`.
 
 ## Preferences
 
-- Commit only, never push unless asked. Keep AGENTS.md in sync.
-- No hardcoded secrets - `$ENV_VAR` only. Scan staged files before committing.
-- Commit messages: lowercase, imperative, no period (e.g. `add scratch session indicator`).
-- Follow existing file naming and code style. Match what's already there.
+Global git conventions live in `crush/AGENTS.md` (loaded via `context_paths` in `crush.json`). Repo-specific preferences:
+
+- Keep AGENTS.md in sync with the project structure.
 - When adding/updating skills, review frontmatter: set `user-invocable: true` on skills designed for manual invocation (trigger phrases, argument hints). Omit on auto-triggered knowledge-only skills.
 
 ## Gotchas
