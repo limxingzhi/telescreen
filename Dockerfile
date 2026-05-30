@@ -2,7 +2,7 @@ FROM node:24-bookworm
 
 ARG NVIM_VERSION=v0.12.2
 ARG LAZYGIT_VERSION=v0.62.1
-ARG CRUSH_VERSION=v0.74.0
+ARG CRUSH_VERSION=v0.74.1
 ARG GLOW_VERSION=v2.1.2
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -107,6 +107,7 @@ ENV CRUSH_GLOBAL_CONFIG=/etc/crush/crush.json
 
 # Shell config (outside /root so it survives bind mounts)
 COPY init.zsh /etc/zsh/init.zsh
+COPY zshrc /etc/zsh/zshrc
 
 # Tmux config (outside /root so it survives bind mounts)
 COPY tmux/tmux.conf /etc/tmux/tmux.conf
@@ -121,7 +122,8 @@ RUN git clone --single-branch --depth 1 --branch v1.2.1 https://github.com/tmux-
 
 # Entrypoint
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY scripts/motd.sh /usr/local/bin/motd.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/motd.sh
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["zsh"]

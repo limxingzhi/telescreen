@@ -32,7 +32,7 @@ No test suite, no linter. Verify changes with `docker build`.
 Dockerfile
   ├─ entrypoint.sh          → Runtime orchestrator (runs as root)
   │    ├─ sets TZ
-  │    ├─ bootstraps .zshrc → sources init.zsh
+  │    ├─ bootstraps .zshrc → copies /etc/zsh/zshrc
   │    ├─ symlinks tmux.conf → /etc/tmux/tmux.conf
   │    ├─ copies plugins    → /opt/tmux-plugins/ → ~/.tmux/plugins/
   │    ├─ copies skills     → /etc/agents/skills/
@@ -44,7 +44,8 @@ Dockerfile
   ├─ crush/
   │    ├─ crush.json         → /etc/crush/crush.json (zai provider, $ZAI_API_KEY, LSPs)
   │    └─ AGENTS.md          → /etc/crush/AGENTS.md (global prefs loaded via context_paths)
-  ├─ init.zsh               → Shell env (EDITOR, aliases, tat fn)
+  ├─ init.zsh               → Shell env (EDITOR, aliases, tat fn, MOTD on login)
+  ├─ zshrc                  → Custom .zshrc template (Oh My Zsh + sources init.zsh)
   ├─ tmux/
   │    ├─ tmux.conf         → /etc/tmux/tmux.conf (mouse, vi copy, yank, popup, renumber)
   │    ├─ popup.sh          → Scratch popup (prefix+s)

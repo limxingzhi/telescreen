@@ -14,10 +14,9 @@ if [ -n "${TZ:-}" ]; then
     echo "$TZ" > /etc/timezone
 fi
 
-# Bootstrap .zshrc if missing (Oh My Zsh template from /opt)
+# Bootstrap .zshrc if missing
 if [ ! -f "$ZSHRC" ]; then
-  cp /opt/oh-my-zsh/templates/zshrc.zsh-template "$ZSHRC"
-  sed -i "s|export ZSH=.*|export ZSH=/opt/oh-my-zsh|" "$ZSHRC"
+  cp /etc/zsh/zshrc "$ZSHRC"
 fi
 
 # Link tmux config if not present
@@ -109,8 +108,6 @@ mkdir -p "$NVIM_CONFIG_DIR"
 if [ ! -f "$NVIM_CONFIG" ]; then
     cp /etc/nvim/init.lua "$NVIM_CONFIG"
 fi
-
-grep -qxF 'source /etc/zsh/init.zsh' "$ZSHRC" 2>/dev/null || echo 'source /etc/zsh/init.zsh' >> "$ZSHRC"
 
 # If stdin is a tty, exec into the shell. Otherwise just keep the container alive.
 if [ -t 0 ]; then
