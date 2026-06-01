@@ -38,7 +38,7 @@ hline "    deno    ripgrep  fd-find  jq  fzf  TypeScript"
 hline ''
 hline '  Aliases'
 hline "    n  ->  npm          nr  ->  npm run"
-hline "    ms ->  markserv     tat ->  tmux attach"
+hline "    ms                    tat ->  tmux attach"
 hline ''
 hline "  Host: $HOST"
 if [ -n "$TS_INFO" ]; then

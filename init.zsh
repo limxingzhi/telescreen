@@ -3,7 +3,6 @@ export VISUAL=nvim
 
 alias n="npm"
 alias nr="npm run"
-alias ms="markserv -p 3456 -a 0.0.0.0"
 
 tat() {
     if [ -z "$TMUX" ]; then

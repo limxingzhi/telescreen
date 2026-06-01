@@ -20,6 +20,12 @@ A cute, opinionated dev environment in a container. One `docker run` and you get
 
 > Crush and lazygit in split panes - `prefix+%` to split vertically, then run `lazygit` in the new pane.
 
+<p align="center">
+  <img src="screenshots/screenshot4 - four telescreen instances side by side.jpg" alt="Four telescreen instances running four different projects side by side" />
+</p>
+
+> Four isolated telescreen instances, running in parallel side by side — Crush writing a Raycast plugin via a skill, markserve serving telescreen's markdown docs over Tailscale, a webpage snapshot archive served over Tailscale, and n8n workflows authored via MCP — each with tmux inside.
+
 ## What's inside
 
 | Tool | Why you'll love it |
@@ -227,12 +233,3 @@ Images are built for **linux/amd64** and **linux/arm64** and published to GHCR o
 - Tailscale uses **tun mode** when `/dev/net/tun` is available (requires `--cap-add=NET_ADMIN --device /dev/net/tun`). Falls back to userspace networking otherwise. Netfilter is disabled in tun mode for container compatibility.
 - Tailscale SSH requires an [ACL policy](https://login.tailscale.com/admin/acls) allowing SSH access
 - Image tags: `latest` + date-based (`YYYY.MM.DD`)
-- tmux plugins (TPM + tmux-yank) are pre-installed at build time and linked on first start
-
----
-
-> *The telescreen received and transmitted simultaneously. Any sound that Winston made, above the level of a very low whisper, would be picked up by it; moreover, so long as he remained within the field of vision which the metal plaque commanded, he could be seen as well as heard. There was of course no way of knowing whether you were being watched at any given moment.*
->
-> — George Orwell, *1984*
-
-Might as well have good tools.
