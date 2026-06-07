@@ -52,11 +52,6 @@
       "args": ["--stdio"],
       "root_markers": ["tsconfig.json", "package.json"]
     },
-    "javascript": {
-      "command": "typescript-language-server",
-      "args": ["--stdio"],
-      "root_markers": ["jsconfig.json", "package.json"]
-    },
     "deno": {
       "command": "deno",
       "args": ["lsp"],
