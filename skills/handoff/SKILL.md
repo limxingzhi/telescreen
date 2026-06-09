@@ -3,9 +3,8 @@ name: handoff
 description: Compact the current conversation into a handoff document for another agent to pick up.
 argument-hint: "What will the next session be used for?"
 user-invocable: true
+source: https://github.com/mattpocock/skills/tree/main/skills/productivity/handoff
 ---
-
-Source: [mattpocock/skills](https://github.com/mattpocock/skills/tree/main/skills/productivity/handoff)
 
 Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to and read from ~/.handoff/ (create if needed) - not the current workspace.
 
