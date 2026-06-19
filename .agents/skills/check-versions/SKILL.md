@@ -18,16 +18,18 @@ Run when the user asks to check for tool updates, bump versions, or update pinne
 
 ## Procedure
 
-1. For the requested tool(s), fetch the latest release tag from GitHub API:
+1. Run the bundled script to check all tools:
    ```
-   https://api.github.com/repos/{owner}/{repo}/releases/latest
+   tsx .agents/skills/check-versions/check-versions.ts all
    ```
-   Extract `tag_name` from the JSON response.
 
-2. Read the current pinned version from the Dockerfile ARG at `/root/telescreen/Dockerfile`.
+   Or check a single tool:
+   ```
+   tsx .agents/skills/check-versions/check-versions.ts neovim
+   ```
 
-3. If the latest version differs from the pinned version, update the ARG line in the Dockerfile.
+   The script fetches the latest release tag from each GitHub repo and compares it against the ARG pinned in the Dockerfile. Results are printed to stdout — outdated tools are marked with `↑` and current ones with `✓`.
 
-4. Run `docker build -t telescreen .` to verify the image builds with the new version.
+2. If any tool is outdated, update the corresponding ARG line(s) in `/root/telescreen/Dockerfile` using `edit`.
 
-5. Report what changed.
+3. Run `docker build -t telescreen .` to verify the image builds with the new version.
