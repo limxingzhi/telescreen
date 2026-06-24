@@ -93,11 +93,12 @@ function htmlPage(title, rendered, mermaid) {
 <style>
 .markdown-body{max-width:900px;margin:2rem auto;padding:0 1rem}
 .markdown-body .mermaid{text-align:center;margin:1em 0}
+body{background:#fff;margin:0}@media(prefers-color-scheme:dark){body{background:#0d1117}}
 </style>
 </head>
 <body>
 <article class="markdown-body">${rendered}</article>
-${mermaid ? '<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({startOnLoad:true})</script>' : ''}
+${mermaid ? '<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({startOnLoad:true,theme:matchMedia("(prefers-color-scheme:dark)").matches?"dark":"default"})</script>' : ''}
 </body>
 </html>`;
 }
