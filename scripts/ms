@@ -88,15 +88,17 @@ function htmlPage(title, rendered, mermaid) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${title}</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown-dark.min.css" media="(prefers-color-scheme: dark)">
 <style>
-.markdown-body{max-width:900px;margin:2rem auto;padding:0 1rem;background:#fff;color:#24292e}
+.markdown-body{max-width:900px;margin:2rem auto;padding:0 1rem}
 .markdown-body .mermaid{text-align:center;margin:1em 0}
+body{background:#fff;margin:0}@media(prefers-color-scheme:dark){body{background:#0d1117}}
 </style>
 </head>
 <body>
 <article class="markdown-body">${rendered}</article>
-${mermaid ? '<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({startOnLoad:true})</script>' : ''}
+${mermaid ? '<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script><script>mermaid.initialize({startOnLoad:true,theme:matchMedia("(prefers-color-scheme:dark)").matches?"dark":"default"})</script>' : ''}
 </body>
 </html>`;
 }
