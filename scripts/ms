@@ -127,7 +127,7 @@ function dirListing(dirPath, requestPath) {
       const full = path.join(dirPath, item);
       const isDir = fs.statSync(full).isDirectory();
       const suffix = isDir ? '/' : '';
-      return `<tr><td><a href="${path.join(requestPath, item)}${suffix}">${item}${suffix}</a></td></tr>`;
+      return `<tr><td><a href="${path.join(requestPath, encodeURIComponent(item))}${suffix}">${item}${suffix}</a></td></tr>`;
     })
     .join('\n');
 
@@ -138,7 +138,7 @@ function dirListing(dirPath, requestPath) {
 // --- Server ---
 const server = http.createServer((req, res) => {
   const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-  let filePath = path.normalize(path.join(ROOT, parsed.pathname));
+  let filePath = path.normalize(path.join(ROOT, decodeURIComponent(parsed.pathname)));
 
   // Resolve symlinks so they can't escape ROOT
   try { filePath = fs.realpathSync(filePath); } catch {}
