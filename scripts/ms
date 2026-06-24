@@ -112,6 +112,8 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
   '.html': 'text/html',
+  '.yaml': 'text/plain',
+  '.yml': 'text/plain',
   '.json': 'application/json',
   '.woff2': 'font/woff2',
   '.woff': 'font/woff',
