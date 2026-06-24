@@ -90,7 +90,7 @@ function htmlPage(title, rendered, mermaid) {
 <title>${title}</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown.min.css">
 <style>
-.markdown-body{max-width:900px;margin:2rem auto;padding:0 1rem}
+.markdown-body{max-width:900px;margin:2rem auto;padding:0 1rem;background:#fff;color:#24292e}
 .markdown-body .mermaid{text-align:center;margin:1em 0}
 </style>
 </head>
