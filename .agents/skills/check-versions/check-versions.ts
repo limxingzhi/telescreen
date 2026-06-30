@@ -7,6 +7,7 @@ const ARG_REPOS: Record<string, string> = {
   LAZYGIT_VERSION: "jesseduffield/lazygit",
   CRUSH_VERSION: "charmbracelet/crush",
   GLOW_VERSION: "charmbracelet/glow",
+  TAILSCALE_VERSION: "tailscale/tailscale",
 };
 
 const ALIASES: Record<string, string> = {
@@ -15,6 +16,7 @@ const ALIASES: Record<string, string> = {
   lazygit: "LAZYGIT_VERSION",
   crush: "CRUSH_VERSION",
   glow: "GLOW_VERSION",
+  tailscale: "TAILSCALE_VERSION",
 };
 
 function resolveTargets(args: string[]): string[] {
@@ -25,7 +27,7 @@ function resolveTargets(args: string[]): string[] {
     const mapped = ALIASES[key];
     if (!mapped) {
       console.error(`unknown tool: ${arg}`);
-      console.error("usage: check-versions {neovim|lazygit|crush|glow|all}");
+      console.error("usage: check-versions {neovim|lazygit|crush|glow|tailscale|all}");
       process.exit(1);
     }
     targets.add(mapped);

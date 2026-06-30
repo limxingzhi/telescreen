@@ -2,8 +2,9 @@ FROM node:24-bookworm
 
 ARG NVIM_VERSION=v0.12.3
 ARG LAZYGIT_VERSION=v0.62.2
-ARG CRUSH_VERSION=v0.80.0
+ARG CRUSH_VERSION=v0.81.0
 ARG GLOW_VERSION=v2.1.2
+ARG TAILSCALE_VERSION=v1.98.8
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm-256color
@@ -12,7 +13,7 @@ ENV TZ=UTC
 # Tailscale
 RUN curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null \
     && curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list \
-    && apt-get update && apt-get install -y tailscale \
+    && apt-get update && apt-get install -y tailscale=${TAILSCALE_VERSION#v} \
     && rm -rf /var/lib/apt/lists/*
 
 # Tools
