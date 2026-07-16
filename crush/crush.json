@@ -2,14 +2,14 @@
   "$schema": "https://charm.land/crush.json",
   "models": {
     "large": {
-      "model": "glm-5.1",
-      "provider": "zai",
+      "model": "deepseek-v4-pro",
+      "provider": "deepseek",
       "think": true,
       "max_tokens": 65536
     },
     "small": {
-      "model": "glm-4.7-flash",
-      "provider": "zai"
+      "model": "deepseek-v4-flash",
+      "provider": "deepseek"
     }
   },
   "options": {
