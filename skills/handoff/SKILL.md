@@ -8,6 +8,8 @@ source: https://github.com/mattpocock/skills/tree/main/skills/productivity/hando
 
 Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to and read from ~/.handoff/ (create if needed) - not the current workspace.
 
+Name the file `YYYY-MM-DD-<slug>.md` with today's date and a dash-case slug for the work, e.g. `1997-11-21-continue-api-refactor.md`. When reading a handoff, use the most recent file in ~/.handoff/.
+
 Include a "suggested skills" section in the document, which suggests skills that the agent should invoke.
 
 Do not duplicate content already captured in other artifacts (specs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead.
