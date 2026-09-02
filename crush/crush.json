@@ -14,7 +14,10 @@
   },
   "options": {
     "auto_lsp": true,
-    "context_paths": ["/etc/crush/AGENTS.md"]
+    "context_paths": ["/etc/crush/AGENTS.md"],
+    "tui": {
+      "exit_banner": "compact"
+    }
   },
   "providers": {
     "deepseek": {
