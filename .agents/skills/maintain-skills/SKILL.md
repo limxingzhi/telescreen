@@ -44,6 +44,7 @@ The `skills/` directory vendors skills from upstream repos. Each vendored SKILL.
 - **Descriptions**: keep the repo's trigger-rich descriptions; upstream rewrites often shorten them.
 - **Names**: keep local skill names and H1 titles (e.g. `diagnose`, not upstream's `diagnosing-bugs`).
 - **Behaviour**: keep deliberate local choices (e.g. handoff saves to `~/.handoff/`).
+- **Date prefixes**: keep local date-prefixed markdown filenames (`YYYY-MM-DD-<slug>.md`) for standalone artifacts (e.g. handoff docs); leave in-place workspace state files (e.g. teach's learning records) un-prefixed.
 - **Never vendor** upstream `agents/*.yaml`: OpenAI packaging, unused here.
 
 ## Special cases

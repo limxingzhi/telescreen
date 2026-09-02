@@ -64,6 +64,7 @@ Global git conventions live in `crush/AGENTS.md` (loaded via `context_paths` in 
 
 - Keep AGENTS.md in sync with the project structure.
 - When adding/updating skills, review frontmatter: set `user-invocable: true` on skills designed for manual invocation (trigger phrases, argument hints). Omit on auto-triggered knowledge-only skills.
+- Skills that write a standalone markdown artifact (e.g. handoff docs) must prefix the filename with the date in `YYYY-MM-DD` (e.g. `1997-11-21-<slug>.md`). Workspace state files that a skill updates in place (e.g. teach's `MISSION.md`, learning records) keep their fixed names.
 
 ## Gotchas
 
