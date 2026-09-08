@@ -115,6 +115,17 @@ On first start, the container fetches a config from a [GitHub Gist](https://gist
 docker run -it --rm -v ./my-init.lua:/root/.config/nvim/init.lua dev-env
 ```
 
+## Runtime customization
+
+Configs live in `/etc/` inside the image so they survive mounts on `/root`. For changes that don't need a rebuild, hook into your persistent home volume:
+
+- `~/start.sh` — sourced as bash by the entrypoint once per container start (exports reach your shell). Good for starting services, setting env vars, or wiring up hosts.
+- `~/.zshrc` — your own aliases, functions, and per-shell env (the baked template is only copied when the file is missing).
+
+```sh
+docker run -it --rm -v ./start.sh:/root/start.sh -v dev-env-home:/root dev-env
+```
+
 ## tmux
 
 ### Keybindings

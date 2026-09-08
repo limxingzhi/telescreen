@@ -109,6 +109,12 @@ if [ ! -f "$NVIM_CONFIG" ]; then
     cp /etc/nvim/init.lua "$NVIM_CONFIG"
 fi
 
+# Runtime init hook: source ~/start.sh when present (runs as bash once per container start)
+if [ -f "$HOME/start.sh" ]; then
+    echo "Running $HOME/start.sh"
+    . "$HOME/start.sh" || echo "WARNING: $HOME/start.sh exited non-zero"
+fi
+
 # If stdin is a tty, exec into the shell. Otherwise just keep the container alive.
 if [ -t 0 ]; then
     exec "$@"
