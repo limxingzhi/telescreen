@@ -39,6 +39,7 @@ Dockerfile
   │    ├─ fetches nvim config from Gist (fallback /etc/nvim/init.lua)
   │    ├─ starts tailscaled if TS_AUTHKEY set
   │    ├─ appends aliases (idempotent)
+  │    ├─ sources ~/start.sh if present (runtime init hook)
   │    └─ exec "$@" (zsh)
   │
   ├─ crush/
@@ -56,7 +57,7 @@ Dockerfile
   └─ .github/workflows/publish.yml → Multi-arch GHCR publish
 ```
 
-Configs live in `/etc/` so they survive volume mounts on `/root`.
+Configs live in `/etc/` so they survive volume mounts on `/root`. Runtime customization hooks into the persistent home: `~/start.sh` is sourced by the entrypoint as bash on every container start, and `~/.zshrc` can be edited directly for per-shell setup (the baked template is only copied when it's missing).
 
 ## Preferences
 
