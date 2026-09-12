@@ -8,6 +8,7 @@ ARG TAILSCALE_VERSION=v1.102.4
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm-256color
+ENV LANG=C.UTF-8
 ENV TZ=UTC
 
 # Tailscale
