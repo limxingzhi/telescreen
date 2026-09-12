@@ -74,6 +74,7 @@ Global git conventions live in `crush/AGENTS.md` (loaded via `context_paths` in 
 - No `.dockerignore` - full build context sent on every build.
 - Same-day pushes overwrite date tag.
 - Neovim Gist URL hardcoded in `entrypoint.sh`.
+- `LANG=C.UTF-8` is set in the image so tmux enables UTF-8 mode; without it tmux drops multibyte glyphs (`client_utf8=0`) and Nerd Font icons break inside tmux but still render outside it.
 - Tailscale SSH needs ACL policy in admin console.
 - tmux-yank OSC 52 only - no clipboard support in some terminals.
 - tmux plugins pre-installed at build time (TPM + tmux-yank), linked on first start.

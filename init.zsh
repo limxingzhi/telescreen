@@ -1,3 +1,5 @@
+export LANG="${LANG:-C.UTF-8}"
+
 export EDITOR=nvim
 export VISUAL=nvim
 
