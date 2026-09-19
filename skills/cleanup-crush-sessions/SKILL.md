@@ -15,6 +15,7 @@ Sessions live per project in a SQLite DB at the crush data directory (from `crus
 - **Top-level sessions**: rows with an empty `parent_session_id`. These are what `crush session list` shows — the resume menu. Titles are auto-generated from the first prompt and unreliable; group by message content, not title.
 - **Sub-agent sessions**: rows with a non-empty `parent_session_id`. Their stored id is composite (`<uuid>$$call_<...>`, e.g. `0533b7a3-8886-4b3e-9c41-ee8eb2a8c8df$$call_d62726bfa0f34241bb82ee50`). They never appear in `crush session list`, cannot be deleted by hash prefix, and are usually orphans of deleted sessions.
 - **Active session**: the top row of `crush session list` (most recently updated, its first user message is the current request). Never delete it.
+- **Menu order**: `crush session list` sorts by `updated_at` DESC (newest first). Renaming bumps a session's `updated_at` to now, so retitling reorders the menu — restore the original order by retitling oldest-first (step 7).
 - Deleting a session cascades to its messages/files/read_files. Deletion is irreversible — always confirm the keep/delete plan with the user first.
 
 ## Procedure
@@ -30,7 +31,7 @@ Sessions live per project in a SQLite DB at the crush data directory (from `crus
    ```
    Shows, for every top-level session: short id, date, message count, first/last user message, and last assistant reply. Requires Node ≥ 22 (`node:sqlite`). Point at another project's DB with a positional path arg.
 
-3. Group sessions by theme — typical groups seen in this repo: repeated check-versions maintenance runs, one-off "do a commit" chores, distinct feature/config work (skill adds, config tweaks), throwaway command runs. Completed duplicates are discardable; keep the active session plus recent or still-relevant representatives (e.g. the newest config/skill work, the latest recurring maintenance run). For each keeper, draft a concise human title describing the work (e.g. `maintenance: check-versions 2026-09-01`, `feature: add cleanup-crush-sessions skill`) — the auto-generated `New Session`/`Untitled Session` names are useless in the resume menu.
+3. Group sessions by theme — typical groups seen in this repo: repeated check-versions maintenance runs, one-off "do a commit" chores, distinct feature/config work (skill adds, config tweaks), throwaway command runs. Completed duplicates are discardable; keep the active session plus recent or still-relevant representatives (e.g. the newest config/skill work, the latest recurring maintenance run). For each keeper, draft a concise human title describing the work (e.g. `maintenance: check-versions 2026-09-01`, `feature: add cleanup-crush-sessions skill`) — the auto-generated `New Session`/`Untitled Session` names are useless in the resume menu. Note each keeper's current position in the menu; step 7 restores that order.
 
 4. Present the groups with a concrete keep/delete list and confirm the scope. Show the proposed retitle next to each keeper so the user can veto or adjust wording. Common scopes:
    - `moderate`: active session + newest session of each distinct piece of work (recommended)
@@ -56,6 +57,16 @@ Sessions live per project in a SQLite DB at the crush data directory (from `crus
    ```
    crush session rename <short-id> '<title>'
    ```
-   One call per keeper, using the agreed titles from step 4. Quote the title; keep it short and specific enough to distinguish sessions of the same group (the active session needs no rename). Skip sessions already carrying a good title.
+   One call per keeper, using the agreed titles from step 4. Quote the title; keep it short and specific enough to distinguish sessions of the same group. The active session needs no rename — it keeps the newest `updated_at` on its own.
 
-8. Verify: `crush session list` shows only the intended sessions with their new titles, and (optionally) the DB row counts match — `sessions`, `messages`, `files`, `read_files` tables in the data-dir `crush.db`.
+   **Retitle oldest-first to preserve order.** Renaming sets `updated_at` to now and the menu sorts newest-first, so the last rename lands on top. Rename from the oldest keeper to the newest so the final menu matches the original order noted in step 3. A session that already carries a good title still needs a rename (to the same title) if it is part of the sequence. `updated_at` has one-second granularity, so separate renames by at least ~1 second (`sleep 1`) or same-second renames can tie:
+   ```
+   crush session rename <oldest-id> '<title>'
+   sleep 1
+   crush session rename <next-id>   '<title>'
+   sleep 1
+   ...
+   crush session rename <newest-id> '<title>'
+   ```
+
+8. Verify: `crush session list` shows only the intended sessions, in their original order, with their new titles. Optionally confirm the DB row counts — `sessions`, `messages`, `files`, `read_files` tables in the data-dir `crush.db`.
