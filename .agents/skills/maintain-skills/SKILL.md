@@ -40,6 +40,7 @@ The `skills/` directory vendors skills from upstream repos. Each vendored SKILL.
 ## Local conventions to preserve
 
 - **Frontmatter**: keep `user-invocable: true` and `argument-hint` on manually-invoked skills (AGENTS.md preference). Prefer them over upstream's `disable-model-invocation: true`.
+- **Model invocation**: on knowledge-only skills that the model should auto-apply, drop upstream's `disable-model-invocation: true` (e.g. unslop, which "must always apply").
 - **Attribution**: keep the `Source:` / `source:` line pointing at upstream.
 - **Descriptions**: keep the repo's trigger-rich descriptions; upstream rewrites often shorten them.
 - **Names**: keep local skill names and H1 titles (e.g. `diagnose`, not upstream's `diagnosing-bugs`).
