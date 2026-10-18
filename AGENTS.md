@@ -47,6 +47,7 @@ Dockerfile
   │    └─ AGENTS.md          → /etc/crush/AGENTS.md (global prefs loaded via context_paths)
   ├─ init.zsh               → Shell env (EDITOR, aliases, tat fn, MOTD on login)
   ├─ zshrc                  → Custom .zshrc template (Oh My Zsh + sources init.zsh)
+  ├─ nvim/plugin/clipboard.lua → OSC 52 clipboard provider (copied to ~/.config/nvim/plugin/)
   ├─ tmux/
   │    ├─ tmux.conf         → /etc/tmux/tmux.conf (mouse, vi copy, yank, popup, renumber)
   │    ├─ popup.sh          → Scratch popup (prefix+s)

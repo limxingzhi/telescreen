@@ -109,6 +109,11 @@ if [ ! -f "$NVIM_CONFIG" ]; then
     cp /etc/nvim/init.lua "$NVIM_CONFIG"
 fi
 
+mkdir -p "$NVIM_CONFIG_DIR/plugin"
+if [ ! -f "$NVIM_CONFIG_DIR/plugin/clipboard.lua" ]; then
+    cp /etc/nvim/plugin/clipboard.lua "$NVIM_CONFIG_DIR/plugin/clipboard.lua"
+fi
+
 # Runtime init hook: source ~/start.sh when present (runs as bash once per container start)
 if [ -f "$HOME/start.sh" ]; then
     echo "Running $HOME/start.sh"

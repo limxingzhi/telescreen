@@ -93,6 +93,7 @@ WORKDIR /root
 
 # Default nvim config (outside /root, survives bind mounts)
 RUN mkdir -p /etc/nvim && curl -fsSL https://gist.github.com/limxingzhi/fa3be5045caded9d4e09f2423dbfcec7/raw -o /etc/nvim/init.lua
+COPY nvim/ /etc/nvim/
 
 # Persist home directory across restarts (configs, projects, etc.)
 VOLUME /root
