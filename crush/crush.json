@@ -19,8 +19,11 @@
       "trailer_style": "none",
       "generated_with": false
     },
+    "disable_metrics": true,
+    "notifications": "bell",
     "tui": {
-      "exit_banner": "compact"
+      "exit_banner": "compact",
+      "scrollbar": "always"
     }
   },
   "providers": {
