@@ -10,6 +10,8 @@ Run when the user asks to clean up crush sessions (group them, keep the relevant
 
 Sessions live per project in a SQLite DB at the crush data directory (from `crush_info` → `data_directory`, e.g. `<project>/.crush/crush.db`). All inspection below is read-only.
 
+**Scope: the current working directory's project only.** Every command here (`crush session list/delete/rename` and `session-summary.ts`) must resolve to the project that contains the cwd — the same scope the agent is running in. The script finds the DB by walking up from cwd to the nearest `.crush/crush.db`; it rejects explicit DB paths and never touches another project's history. Confirm `crush_info` → `data_directory` lives inside the cwd before starting; if it points elsewhere, stop and ask the user.
+
 ## Concepts
 
 - **Top-level sessions**: rows with an empty `parent_session_id`. These are what `crush session list` shows — the resume menu. Titles are auto-generated from the first prompt and unreliable; group by message content, not title.
@@ -20,16 +22,17 @@ Sessions live per project in a SQLite DB at the crush data directory (from `crus
 
 ## Procedure
 
-1. Snapshot the current list:
+1. Snapshot the current list for this project (run from the project root or any subdirectory inside it):
    ```
    crush session list
    ```
+   It reads the cwd project's DB, not a global one. Cross-check that it matches `crush_info` → `data_directory` for the cwd.
 
 2. Print per-session summaries to group by actual topic (title alone is misleading):
    ```
    tsx ~/.config/agents/skills/cleanup-crush-sessions/session-summary.ts
    ```
-   Shows, for every top-level session: short id, date, message count, first/last user message, and last assistant reply. Requires Node ≥ 22 (`node:sqlite`). Point at another project's DB with a positional path arg.
+   Shows, for every top-level session: short id, date, message count, first/last user message, and last assistant reply. Requires Node ≥ 22 (`node:sqlite`). It resolves the same cwd-scoped DB as `crush session list`; it takes no DB path and refuses one, so it cannot summarize another project.
 
 3. Group sessions by theme — typical groups seen in this repo: repeated check-versions maintenance runs, one-off "do a commit" chores, distinct feature/config work (skill adds, config tweaks), throwaway command runs. Completed duplicates are discardable; keep the active session plus recent or still-relevant representatives (e.g. the newest config/skill work, the latest recurring maintenance run). For each keeper, draft a concise human title describing the work (e.g. `maintenance: check-versions 2026-09-01`, `feature: add cleanup-crush-sessions skill`) — the auto-generated `New Session`/`Untitled Session` names are useless in the resume menu. Note each keeper's current position in the menu; step 7 restores that order.
 
@@ -42,13 +45,13 @@ Sessions live per project in a SQLite DB at the crush data directory (from `crus
    ```
    crush session delete <short-id>
    ```
-   One call per session. Skip the active session.
+   One call per session. Skip the active session. Resolve ids only from the `<short-id>` values listed for the cwd project; never pass `--data-dir` or run this from another project's directory.
 
-6. Purge remaining sub-agent sessions (or any the user flags):
+6. Purge remaining sub-agent sessions in the cwd project (or any the user flags):
    ```
    tsx ~/.config/agents/skills/cleanup-crush-sessions/session-summary.ts --children
    ```
-   lists their exact ids. Delete each with the full stored id — quote it, the `$$` is literal:
+   lists their exact ids from the same cwd-scoped DB. Delete each with the full stored id — quote it, the `$$` is literal:
    ```
    crush session delete '<uuid>$$call_<...>'
    ```
