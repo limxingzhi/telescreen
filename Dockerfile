@@ -78,11 +78,6 @@ RUN ARCH=$(uname -m) && \
 # TypeScript tooling
 RUN npm install -g --ignore-scripts npm typescript typescript-language-server ts-node tsx http-server eslint bash-language-server markserv
 
-# Install Deno
-RUN curl -fsSL https://deno.land/install.sh | sh \
-    && mv /root/.deno/bin/deno /usr/local/bin/deno \
-    && rm -rf /root/.deno
-
 # Oh My Zsh (install to /opt so it survives bind mounts on /root)
 ENV ZSH=/opt/oh-my-zsh
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended \
