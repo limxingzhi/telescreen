@@ -3,19 +3,19 @@
 A cute, opinionated dev environment in a container. One `docker run` and you get a fully-loaded workspace with all your favorite CLI tools.
 
 <p align="center">
-  <img src="screenshots/screenshot1 - running crush in tmux.jpg" alt="Running Crush in tmux" />
+  <img src="screenshots/screenshot1 - running crush in tmux.png" alt="Running Crush in tmux" />
 </p>
 
 > Crush running inside tmux - just run `crush` and start chatting.
 
 <p align="center">
-  <img src="screenshots/screenshot2 - running nvim in a scratch session.jpg" alt="Neovim in a scratch popup session" />
+  <img src="screenshots/screenshot2 - running nvim in a scratch session.png" alt="Neovim in a scratch popup session" />
 </p>
 
 > Neovim in a scratch popup session - `prefix+s` opens a scratch workspace on demand.
 
 <p align="center">
-  <img src="screenshots/screenshot3 - running crush and lazygit in panes.jpg" alt="Crush and lazygit side by side" />
+  <img src="screenshots/screenshot3 - running crush and lazygit in panes.png" alt="Crush and lazygit side by side" />
 </p>
 
 > Crush and lazygit in split panes - `prefix+%` to split vertically, then run `lazygit` in the new pane.
@@ -39,6 +39,7 @@ A cute, opinionated dev environment in a container. One `docker run` and you get
 | **Node.js 24 + TypeScript** | `tsc`, `ts-node`, `tsx`, `eslint`, `http-server` and more. |
 | **LSP support** | Crush ships with language servers for TypeScript and Bash. |
 | **[Glow](https://github.com/charmbracelet/glow)** | Read markdown files right in your terminal, beautifully rendered. `glow README.md` and swoon. |
+| **`ms`** | Serve any folder of markdown as a GitHub-styled site in your browser. Frontmatter, mermaid, and code highlighting included. |
 | **ripgrep, fd, fzf, jq** | The holy quaternity of "wait, that was fast." |
 | **git** | Obviously. |
 
@@ -113,6 +114,23 @@ On first start, the container fetches a config from a [GitHub Gist](https://gist
 ```sh
 docker run -it --rm -v ./my-init.lua:/root/.config/nvim/init.lua dev-env
 ```
+
+## Markdown preview with `ms`
+
+`glow` is great for reading a file in the terminal, but sometimes you want the whole docs folder in a browser. `ms` serves any directory as a browsable markdown site with GitHub styling, syntax-highlighted code, task lists, emoji, and mermaid diagrams. YAML frontmatter is rendered as a table at the top of the page, and folders without an `index.md` fall back to a directory listing.
+
+```sh
+ms                    # serve the current directory on http://0.0.0.0:3456
+ms 8080               # use a different port
+ms 8080 127.0.0.1     # bind to localhost only
+ms -hd                # include hidden files in directory listings
+```
+
+<p align="center">
+  <img src="screenshots/screenshot5 - serving markdown docs with ms.png" alt="Markdown docs served by ms" />
+</p>
+
+> Serving telescreen's docs with `ms` over Tailscale - frontmatter becomes a table and mermaid diagrams render right in the browser.
 
 ## Runtime customization
 
