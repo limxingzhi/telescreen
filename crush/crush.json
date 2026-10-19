@@ -22,6 +22,7 @@
     "disable_metrics": true,
     "notifications": "bell",
     "tui": {
+      "active_theme": "gruvbox-dark",
       "exit_banner": "compact",
       "scrollbar": "always"
     }
