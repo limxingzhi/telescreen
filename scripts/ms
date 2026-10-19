@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // ms — serve .md files with frontmatter (as a table) + mermaid + GitHub CSS
 //
-// Usage: ms [port] [address]
+// Usage: ms [-hd] [port] [address]
+//   -hd     Show hidden files in directory listings
 //   port    HTTP port (default: 3456)
 //   address Bind address (default: 0.0.0.0)
 //
@@ -19,8 +20,11 @@ const PLUGINS = {
   emoji: '/usr/local/lib/node_modules/markserv/node_modules/markdown-it-emoji',
 };
 
-const PORT = parseInt(process.argv[2], 10) || 3456;
-const ADDR = process.argv[3] || '0.0.0.0';
+const ARGS = process.argv.slice(2);
+const SHOW_HIDDEN = ARGS.includes('-hd');
+const POSITIONAL = ARGS.filter(arg => arg !== '-hd');
+const PORT = parseInt(POSITIONAL[0], 10) || 3456;
+const ADDR = POSITIONAL[1] || '0.0.0.0';
 const ROOT = fs.realpathSync(process.cwd());
 
 // --- Markdown renderer ---
@@ -123,10 +127,10 @@ const MIME = {
 };
 
 // --- Directory listing ---
-function dirListing(dirPath, requestPath) {
+function dirListing(dirPath, requestPath, showHidden = SHOW_HIDDEN) {
   const items = fs.readdirSync(dirPath);
   const rows = items
-    .filter(item => !item.startsWith('.'))
+    .filter(item => showHidden || !item.startsWith('.'))
     .map(item => {
       const full = path.join(dirPath, item);
       const isDir = fs.statSync(full).isDirectory();
@@ -202,10 +206,10 @@ const server = http.createServer((req, res) => {
 });
 
 // Export for testing (allows tests to start/stop the server)
-module.exports = { server, PORT, ADDR, ROOT };
+module.exports = { server, PORT, ADDR, ROOT, SHOW_HIDDEN, dirListing };
 
 if (require.main === module) {
   server.listen(PORT, ADDR, () => {
-    console.error(`ms → http://${ADDR}:${PORT}/`);
+    console.error(`ms → http://${ADDR}:${PORT}/${SHOW_HIDDEN ? ' [flags: -hd]' : ''}`);
   });
 }

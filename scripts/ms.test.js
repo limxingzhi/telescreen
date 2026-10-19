@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { strict: assert } = require('assert');
 
-const { server, PORT, ADDR, ROOT } = require('./ms');
+const { server, PORT, ADDR, ROOT, SHOW_HIDDEN, dirListing } = require('./ms');
 
 const BASE = `http://${ADDR === '0.0.0.0' ? '127.0.0.1' : ADDR}:${PORT}`;
 
@@ -28,6 +28,9 @@ async function tests() {
   // Also create a normal file for directory listing baseline
   fs.writeFileSync(path.join(tmpDir, 'normal.md'), '# Normal', 'utf8');
 
+  // Hidden file for hidden-file listing tests
+  fs.writeFileSync(path.join(tmpDir, '.hidden.md'), '# Hidden', 'utf8');
+
   const rel = path.relative(ROOT, tmpDir);
 
   // Test 1: URL-encoded path returns 200
@@ -45,6 +48,21 @@ async function tests() {
     assert.match(res.body, /Essential Apps/, 'Directory listing shows filename');
     assert.match(res.body, new RegExp(encodeURIComponent(spaceFile)), 'href contains encoded filename');
     console.log('PASS: Directory listing encodes spaces in hrefs');
+  }
+
+  // Test 3: Hidden files are excluded by default
+  {
+    const res = await get(`${BASE}/${rel}/`);
+    assert.doesNotMatch(res.body, /hidden\.md/, 'Directory listing hides dotfiles by default');
+    assert.equal(SHOW_HIDDEN, false, 'SHOW_HIDDEN defaults to false');
+    console.log('PASS: Directory listing hides dotfiles by default');
+  }
+
+  // Test 4: Hidden files are shown when requested
+  {
+    const html = dirListing(tmpDir, '/', true);
+    assert.match(html, /hidden\.md/, 'dirListing includes dotfiles when showHidden is true');
+    console.log('PASS: Directory listing shows dotfiles when enabled');
   }
 
   // Cleanup

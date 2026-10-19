@@ -15,8 +15,16 @@
   "options": {
     "auto_lsp": true,
     "context_paths": ["/etc/crush/AGENTS.md"],
+    "attribution": {
+      "trailer_style": "none",
+      "generated_with": false
+    },
+    "disable_metrics": true,
+    "notifications": "bell",
     "tui": {
-      "exit_banner": "compact"
+      "active_theme": "gruvbox-dark",
+      "exit_banner": "compact",
+      "scrollbar": "always"
     }
   },
   "providers": {

@@ -1,7 +1,7 @@
 FROM node:24-bookworm
 
 ARG NVIM_VERSION=v0.12.6
-ARG LAZYGIT_VERSION=v0.66.0
+ARG LAZYGIT_VERSION=v0.66.2
 ARG CRUSH_VERSION=v0.98.1
 ARG GLOW_VERSION=v3.0.0
 ARG TAILSCALE_VERSION=v1.104.1
@@ -93,6 +93,7 @@ WORKDIR /root
 
 # Default nvim config (outside /root, survives bind mounts)
 RUN mkdir -p /etc/nvim && curl -fsSL https://gist.github.com/limxingzhi/fa3be5045caded9d4e09f2423dbfcec7/raw -o /etc/nvim/init.lua
+COPY nvim/ /etc/nvim/
 
 # Persist home directory across restarts (configs, projects, etc.)
 VOLUME /root

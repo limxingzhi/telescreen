@@ -1,15 +1,37 @@
 #!/usr/bin/env tsx
 // Summarize crush sessions so an agent can group them by actual topic.
 // Usage:
-//   tsx session-summary.ts [path/to/crush.db] [--top|--children|--all]
-// Default db: <cwd>/.crush/crush.db (project-local data dir). Default flag: --top.
+//   tsx session-summary.ts [--top|--children|--all]
+// Scope: the project containing the current working directory. The DB is found
+// by walking up from cwd to the nearest .crush/crush.db, matching the scope of
+// `crush session list`. Other projects' DBs are deliberately not reachable.
+// Default flag: --top.
 
 import { DatabaseSync } from 'node:sqlite'
-import { join } from 'node:path'
+import { existsSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
 
-const dbPath = process.argv[2] && !process.argv[2].startsWith('--')
-  ? process.argv[2]
-  : join(process.cwd(), '.crush', 'crush.db')
+if (process.argv[2] && !process.argv[2].startsWith('--')) {
+  console.error('Refusing to read a DB outside the current working directory.')
+  console.error('Run this script from inside the project you want to clean up.')
+  process.exit(1)
+}
+
+function findDb(): string {
+  let dir = resolve(process.cwd())
+  while (true) {
+    const candidate = join(dir, '.crush', 'crush.db')
+    if (existsSync(candidate)) return candidate
+    const parent = dirname(dir)
+    if (parent === dir) {
+      console.error(`No .crush/crush.db found above ${process.cwd()}.`)
+      process.exit(1)
+    }
+    dir = parent
+  }
+}
+
+const dbPath = findDb()
 const flag = process.argv.find(a => a.startsWith('--')) ?? '--top'
 
 const db = new DatabaseSync(dbPath, { readOnly: true })
