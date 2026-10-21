@@ -63,11 +63,6 @@
       "args": ["--stdio"],
       "root_markers": ["tsconfig.json", "package.json"]
     },
-    "deno": {
-      "command": "deno",
-      "args": ["lsp"],
-      "root_markers": ["deno.json", "deno.jsonc"]
-    },
     "bash": {
       "command": "bash-language-server",
       "args": ["start"]

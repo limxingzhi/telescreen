@@ -34,11 +34,18 @@ hline '  Tools'
 hline "    Neovim  $(printf '%-8s' "$NVIM_VER")    Lazygit $(printf '%-8s' "$LG_VER")"
 hline "    Crush   $(printf '%-8s' "$CRUSH_VER")    Glow    $(printf '%-8s' "$GLOW_VER")"
 hline "    tmux    $(printf '%-8s' "3.5a")        Node.js 24"
-hline "    deno    ripgrep  fd-find  jq  fzf  TypeScript"
+hline '    TypeScript  ts-node  tsx  eslint  http-server'
+hline '    ripgrep  fd-find  jq  fzf  git  markserv'
 hline ''
 hline '  Aliases'
 hline "    n  ->  npm          nr  ->  npm run"
-hline "    ms                    tat ->  tmux attach"
+hline "    tat ->  tmux attach"
+hline ''
+hline '  ms - markdown server'
+hline '    ms                  serve cwd at http://0.0.0.0:3456'
+hline '    ms 8080             custom port'
+hline '    ms -hd              show hidden files in listings'
+hline '    ms -hd 8080         flags combine with port/address'
 hline ''
 hline "  Host: $HOST"
 if [ -n "$TS_INFO" ]; then
@@ -51,7 +58,8 @@ hline ''
 hline '  Getting started'
 hline '    nvim     ->  Editor          lazygit  ->  Git UI'
 hline '    crush    ->  AI Assistant    glow     ->  Markdown Viewer'
-hline '    tmux     ->  Terminal Mux    tat      ->  Attach tmux session'
+hline '    tmux     ->  Terminal Mux    ms       ->  Markdown Server'
+hline '    tat      ->  Attach tmux session'
 if [ -n "$TS_INFO" ]; then
     hline '    tailscale status       tailscale serve'
 fi

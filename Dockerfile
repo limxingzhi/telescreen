@@ -4,7 +4,7 @@ ARG NVIM_VERSION=v0.12.6
 ARG LAZYGIT_VERSION=v0.66.2
 ARG CRUSH_VERSION=v0.98.1
 ARG GLOW_VERSION=v3.0.0
-ARG TAILSCALE_VERSION=v1.104.1
+ARG TAILSCALE_VERSION=v1.104.2
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm-256color
@@ -77,11 +77,6 @@ RUN ARCH=$(uname -m) && \
 
 # TypeScript tooling
 RUN npm install -g --ignore-scripts npm typescript typescript-language-server ts-node tsx http-server eslint bash-language-server markserv
-
-# Install Deno
-RUN curl -fsSL https://deno.land/install.sh | sh \
-    && mv /root/.deno/bin/deno /usr/local/bin/deno \
-    && rm -rf /root/.deno
 
 # Oh My Zsh (install to /opt so it survives bind mounts on /root)
 ENV ZSH=/opt/oh-my-zsh
