@@ -6,9 +6,9 @@ user-invocable: true
 source: https://github.com/mattpocock/skills/tree/main/skills/productivity/handoff
 ---
 
-Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to and read from ~/.handoff/ (create if needed) - not the current workspace.
+Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to and read from `.handoff/` in the current working directory, creating it if needed - not the home directory. There may be no repo here at all; just use the directory you are working in.
 
-Name the file `YYYY-MM-DD-<slug>.md` with today's date and a dash-case slug for the work, e.g. `1997-11-21-continue-api-refactor.md`. When reading a handoff, use the most recent file in <working dir>/.handoff/.
+Name the file `YYYY-MM-DD-<slug>.md` with today's date and a dash-case slug for the work, e.g. `1997-11-21-continue-api-refactor.md`. Write it to `./.handoff/YYYY-MM-DD-<slug>.md`. When reading a handoff and no file is specified, use the most recent relevant handoff in `./.handoff/` - relevance beats recency, so skip unrelated work even if it is newer.
 
 Include a "suggested skills" section in the document, which suggests skills that the agent should invoke.
 
