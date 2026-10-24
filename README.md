@@ -41,6 +41,7 @@ A cute, opinionated dev environment in a container. One `docker run` and you get
 | **[Glow](https://github.com/charmbracelet/glow)** | Read markdown files right in your terminal, beautifully rendered. `glow README.md` and swoon. |
 | **`ms`** | Serve any folder of markdown as a GitHub-styled site in your browser. Frontmatter, mermaid, and code highlighting included. |
 | **ripgrep, fd, fzf, jq** | The holy quaternity of "wait, that was fast." |
+| **htop** | Glance at what's chewing CPU and memory without leaving the terminal. |
 | **git** | Obviously. |
 
 ## Quick start

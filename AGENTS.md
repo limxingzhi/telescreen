@@ -2,7 +2,7 @@
 
 ## Overview
 
-Docker dev environment on `node:24-bookworm`: neovim, tmux, lazygit, TypeScript, Oh My Zsh, Crush, Glow, Tailscale SSH. Published to `ghcr.io` for `linux/amd64`+`linux/arm64`. No tests or linting.
+Docker dev environment on `node:24-bookworm`: neovim, tmux, lazygit, TypeScript, Oh My Zsh, Crush, Glow, htop, Tailscale SSH. Published to `ghcr.io` for `linux/amd64`+`linux/arm64`. No tests or linting.
 
 **Branch tags**: `main` -> `latest` + `YYYY.MM.DD` | non-main branches -> `{branch-name}` + `{branch-name}-YYYY.MM.DD`
 
