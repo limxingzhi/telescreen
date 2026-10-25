@@ -170,6 +170,21 @@ The `tat <name>` function switches to a tmux session by name - creating it if it
 
 Sessions with numeric names are auto-renumbered when created, closed, or renamed.
 
+### Agent-ready sessions with `trun`
+
+`trun <name>` does what `tat` does, but a new session is created with two windows already running:
+
+- Window 1: `crush --continue` (resumes the most recent session)
+- Window 2: `lazygit`
+
+```sh
+trun my-project
+```
+
+If the session already exists, `trun` attaches or switches to it just like `tat`.
+
+Each window drops you into a shell when the app exits, so quitting `crush` or `lazygit` leaves the window open.
+
 ## Workflows
 
 ### Vibe coding with AI review
@@ -242,6 +257,7 @@ Built into every shell:
 | `n` | `npm` |
 | `nr` | `npm run` |
 | `tat <name>` | Switch to or create a tmux session by name |
+| `trun <name>` | Like `tat`, but a new session opens `crush` and `lazygit` windows |
 
 ## Environment Variables
 

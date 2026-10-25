@@ -45,7 +45,7 @@ Dockerfile
   ├─ crush/
   │    ├─ crush.json         → /etc/crush/crush.json (zai provider, $ZAI_API_KEY, LSPs)
   │    └─ AGENTS.md          → /etc/crush/AGENTS.md (global prefs loaded via context_paths)
-  ├─ init.zsh               → Shell env (EDITOR, aliases, tat fn, MOTD on login)
+  ├─ init.zsh               → Shell env (EDITOR, aliases, tat/trun fns, MOTD on login)
   ├─ zshrc                  → Custom .zshrc template (Oh My Zsh + sources init.zsh)
   ├─ nvim/plugin/clipboard.lua → OSC 52 clipboard provider (copied to ~/.config/nvim/plugin/)
   ├─ tmux/
