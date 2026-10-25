@@ -118,7 +118,7 @@ docker run -it --rm -v ./my-init.lua:/root/.config/nvim/init.lua dev-env
 
 ## Markdown preview with `ms`
 
-`glow` is great for reading a file in the terminal, but sometimes you want the whole docs folder in a browser. `ms` serves any directory as a browsable markdown site with GitHub styling, syntax-highlighted code, task lists, emoji, and mermaid diagrams. YAML frontmatter is rendered as a table at the top of the page, and folders without an `index.md` fall back to a directory listing.
+`glow` is great for reading a file in the terminal, but sometimes you want the whole docs folder in a browser. `ms` serves any directory as a browsable markdown site with GitHub styling, syntax-highlighted code, task lists, emoji, and mermaid diagrams. YAML frontmatter is rendered as a table at the top of the page, and folders without an `index.md` fall back to a directory listing. Plain text files (`.txt`, `.log`, `.sh`) are served as `text/plain`, so the browser shows them inline instead of downloading them.
 
 ```sh
 ms                    # serve the current directory on http://0.0.0.0:3456
