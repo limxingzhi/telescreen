@@ -41,6 +41,7 @@ A cute, opinionated dev environment in a container. One `docker run` and you get
 | **[Glow](https://github.com/charmbracelet/glow)** | Read markdown files right in your terminal, beautifully rendered. `glow README.md` and swoon. |
 | **`ms`** | Serve any folder of markdown as a GitHub-styled site in your browser. Frontmatter, mermaid, and code highlighting included. |
 | **ripgrep, fd, fzf, jq** | The holy quaternity of "wait, that was fast." |
+| **htop** | Glance at what's chewing CPU and memory without leaving the terminal. |
 | **git** | Obviously. |
 
 ## Quick start
@@ -117,7 +118,7 @@ docker run -it --rm -v ./my-init.lua:/root/.config/nvim/init.lua dev-env
 
 ## Markdown preview with `ms`
 
-`glow` is great for reading a file in the terminal, but sometimes you want the whole docs folder in a browser. `ms` serves any directory as a browsable markdown site with GitHub styling, syntax-highlighted code, task lists, emoji, and mermaid diagrams. YAML frontmatter is rendered as a table at the top of the page, and folders without an `index.md` fall back to a directory listing.
+`glow` is great for reading a file in the terminal, but sometimes you want the whole docs folder in a browser. `ms` serves any directory as a browsable markdown site with GitHub styling, syntax-highlighted code, task lists, emoji, and mermaid diagrams. YAML frontmatter is rendered as a table at the top of the page, and folders without an `index.md` fall back to a directory listing. Plain text files (`.txt`, `.log`, `.sh`) are served as `text/plain`, so the browser shows them inline instead of downloading them.
 
 ```sh
 ms                    # serve the current directory on http://0.0.0.0:3456
@@ -168,6 +169,21 @@ The `tat <name>` function switches to a tmux session by name - creating it if it
 - Inside tmux: switches clients or creates + switches
 
 Sessions with numeric names are auto-renumbered when created, closed, or renamed.
+
+### Agent-ready sessions with `trun`
+
+`trun <name>` does what `tat` does, but a new session is created with two windows already running:
+
+- Window 1: `crush --continue` (resumes the most recent session)
+- Window 2: `lazygit`
+
+```sh
+trun my-project
+```
+
+If the session already exists, `trun` attaches or switches to it just like `tat`.
+
+Each window drops you into a shell when the app exits, so quitting `crush` or `lazygit` leaves the window open.
 
 ## Workflows
 
@@ -241,6 +257,7 @@ Built into every shell:
 | `n` | `npm` |
 | `nr` | `npm run` |
 | `tat <name>` | Switch to or create a tmux session by name |
+| `trun <name>` | Like `tat`, but a new session opens `crush` and `lazygit` windows |
 
 ## Environment Variables
 

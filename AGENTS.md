@@ -2,7 +2,7 @@
 
 ## Overview
 
-Docker dev environment on `node:24-bookworm`: neovim, tmux, lazygit, TypeScript, Oh My Zsh, Crush, Glow, Tailscale SSH. Published to `ghcr.io` for `linux/amd64`+`linux/arm64`. No tests or linting.
+Docker dev environment on `node:24-bookworm`: neovim, tmux, lazygit, TypeScript, Oh My Zsh, Crush, Glow, htop, Tailscale SSH. Published to `ghcr.io` for `linux/amd64`+`linux/arm64`. No tests or linting.
 
 **Branch tags**: `main` -> `latest` + `YYYY.MM.DD` | non-main branches -> `{branch-name}` + `{branch-name}-YYYY.MM.DD`
 
@@ -45,7 +45,7 @@ Dockerfile
   ├─ crush/
   │    ├─ crush.json         → /etc/crush/crush.json (zai provider, $ZAI_API_KEY, LSPs)
   │    └─ AGENTS.md          → /etc/crush/AGENTS.md (global prefs loaded via context_paths)
-  ├─ init.zsh               → Shell env (EDITOR, aliases, tat fn, MOTD on login)
+  ├─ init.zsh               → Shell env (EDITOR, aliases, tat/trun fns, MOTD on login)
   ├─ zshrc                  → Custom .zshrc template (Oh My Zsh + sources init.zsh)
   ├─ nvim/plugin/clipboard.lua → OSC 52 clipboard provider (copied to ~/.config/nvim/plugin/)
   ├─ tmux/

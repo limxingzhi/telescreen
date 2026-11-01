@@ -65,6 +65,39 @@ async function tests() {
     console.log('PASS: Directory listing shows dotfiles when enabled');
   }
 
+  // Test 5: .txt files are served as plain text, not downloaded
+  {
+    const txt = '# Not a heading\n<b>literal</b> & more\n';
+    fs.writeFileSync(path.join(tmpDir, 'notes.txt'), txt, 'utf8');
+    const res = await get(`${BASE}/${rel}/notes.txt`);
+    assert.equal(res.status, 200, `Expected 200, got ${res.status} for .txt`);
+    assert.match(res.headers['content-type'], /^text\/plain/, '.txt is served as text/plain');
+    assert.equal(res.body, txt, '.txt content is returned verbatim');
+    console.log('PASS: .txt files are served as plain text');
+  }
+
+  // Test 6: .log files are served as plain text, not downloaded
+  {
+    const log = '2026-01-01 INFO started\n2026-01-01 ERROR failed\n';
+    fs.writeFileSync(path.join(tmpDir, 'app.log'), log, 'utf8');
+    const res = await get(`${BASE}/${rel}/app.log`);
+    assert.equal(res.status, 200, `Expected 200, got ${res.status} for .log`);
+    assert.match(res.headers['content-type'], /^text\/plain/, '.log is served as text/plain');
+    assert.equal(res.body, log, '.log content is returned verbatim');
+    console.log('PASS: .log files are served as plain text');
+  }
+
+  // Test 7: .sh files are served as plain text, not downloaded
+  {
+    const sh = '#!/bin/sh\necho "hi"\n';
+    fs.writeFileSync(path.join(tmpDir, 'run.sh'), sh, 'utf8');
+    const res = await get(`${BASE}/${rel}/run.sh`);
+    assert.equal(res.status, 200, `Expected 200, got ${res.status} for .sh`);
+    assert.match(res.headers['content-type'], /^text\/plain/, '.sh is served as text/plain');
+    assert.equal(res.body, sh, '.sh content is returned verbatim');
+    console.log('PASS: .sh files are served as plain text');
+  }
+
   // Cleanup
   fs.rmSync(tmpDir, { recursive: true, force: true });
   console.log('\nAll tests passed');

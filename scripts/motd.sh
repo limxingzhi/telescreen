@@ -35,7 +35,7 @@ hline "    Neovim  $(printf '%-8s' "$NVIM_VER")    Lazygit $(printf '%-8s' "$LG_
 hline "    Crush   $(printf '%-8s' "$CRUSH_VER")    Glow    $(printf '%-8s' "$GLOW_VER")"
 hline "    tmux    $(printf '%-8s' "3.5a")        Node.js 24"
 hline '    TypeScript  ts-node  tsx  eslint  http-server'
-hline '    ripgrep  fd-find  jq  fzf  git  markserv'
+hline '    ripgrep  fd-find  jq  fzf  htop  git  markserv'
 hline ''
 hline '  Aliases'
 hline "    n  ->  npm          nr  ->  npm run"
