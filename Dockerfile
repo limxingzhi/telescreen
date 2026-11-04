@@ -1,4 +1,4 @@
-FROM node:24-bookworm
+FROM node:26-bookworm
 
 ARG NVIM_VERSION=v0.12.6
 ARG LAZYGIT_VERSION=v0.66.2
