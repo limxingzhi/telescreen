@@ -20,9 +20,14 @@ if [ ! -f "$HOME/.config/lazygit/config.yml" ]; then
     ln -s /etc/lazygit/config.yml "$HOME/.config/lazygit/config.yml"
 fi
 
-# Bootstrap .zshrc if missing
+# Bootstrap .zshrc if missing, or migrate one left over from the Oh My Zsh image
+# (it sources $ZSH/oh-my-zsh.sh, which no longer exists, and errors every shell)
 if [ ! -f "$ZSHRC" ]; then
   cp /etc/zsh/zshrc "$ZSHRC"
+elif grep -q 'oh-my-zsh\.sh' "$ZSHRC"; then
+  cp "$ZSHRC" "$ZSHRC.pre-starship"
+  cp /etc/zsh/zshrc "$ZSHRC"
+  echo "migrated ~/.zshrc to the starship template (old one saved at ~/.zshrc.pre-starship)"
 fi
 
 # Link tmux config if not present

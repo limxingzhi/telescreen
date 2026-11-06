@@ -1,6 +1,8 @@
-export ZSH=/opt/oh-my-zsh
-ZSH_THEME="robbyrussell"
-plugins=(git)
-source $ZSH/oh-my-zsh.sh
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt SHARE_HISTORY HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE AUTO_CD EXTENDED_GLOB
+
+eval "$(starship init zsh)"
 
 source /etc/zsh/init.zsh

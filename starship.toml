@@ -1,0 +1,16 @@
+add_newline = false
+command_timeout = 1000
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+
+[cmd_duration]
+min_time = 2000
+show_milliseconds = false
+
+[hostname]
+ssh_only = true
+
+[git_status]
+style = "bold red"
