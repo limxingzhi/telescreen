@@ -36,7 +36,7 @@ A cute, opinionated dev environment in a container. One `docker run` and you get
 | **Neovim** | The latest release. Auto-fetches a config from a Gist on first start, or mount your own. |
 | **tmux** | Persistent sessions with mouse support, vi copy mode, yank-to-clipboard, and a scratch popup. |
 | **lazygit** | Git but make it fun. Staging, committing, rebasing, diffing - all from a gorgeous TUI. |
-| **Node.js 24 + TypeScript** | `tsc`, `ts-node`, `tsx`, `eslint`, `http-server` and more. |
+| **Node.js 26 + TypeScript** | `tsc`, `ts-node`, `tsx`, `eslint`, `http-server` and more. |
 | **LSP support** | Crush ships with language servers for TypeScript and Bash. |
 | **[Glow](https://github.com/charmbracelet/glow)** | Read markdown files right in your terminal, beautifully rendered. `glow README.md` and swoon. |
 | **`ms`** | Serve any folder of markdown as a GitHub-styled site in your browser. Frontmatter, mermaid, and code highlighting included. |
