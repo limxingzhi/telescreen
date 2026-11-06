@@ -14,10 +14,16 @@ if [ -n "${TZ:-}" ]; then
     echo "$TZ" > /etc/timezone
 fi
 
-# Link lazygit config if not present
-if [ ! -f "$HOME/.config/lazygit/config.yml" ]; then
-    mkdir -p "$HOME/.config/lazygit"
-    ln -s /etc/lazygit/config.yml "$HOME/.config/lazygit/config.yml"
+# Link lazygit config, replacing an empty file left behind by older images
+LG_CONFIG="$HOME/.config/lazygit/config.yml"
+mkdir -p "$HOME/.config/lazygit"
+if [ -L "$LG_CONFIG" ] && [ ! -e "$LG_CONFIG" ]; then
+    rm -f "$LG_CONFIG"
+elif [ -f "$LG_CONFIG" ] && [ ! -L "$LG_CONFIG" ] && [ ! -s "$LG_CONFIG" ]; then
+    rm -f "$LG_CONFIG"
+fi
+if [ ! -e "$LG_CONFIG" ]; then
+    ln -s /etc/lazygit/config.yml "$LG_CONFIG"
 fi
 
 # Bootstrap .zshrc if missing, or migrate one left over from the Oh My Zsh image

@@ -34,7 +34,7 @@ Dockerfile
   │    ├─ sets TZ
   │    ├─ bootstraps .zshrc → copies /etc/zsh/zshrc (migrates pre-starship copies)
   │    ├─ symlinks tmux.conf → /etc/tmux/tmux.conf
-  │    ├─ symlinks lazygit config → /etc/lazygit/config.yml
+  │    ├─ symlinks lazygit config → /etc/lazygit/config.yml (replaces empty/stale file)
   │    ├─ copies plugins    → /opt/tmux-plugins/ → ~/.tmux/plugins/
   │    ├─ copies skills     → /etc/agents/skills/
   │    ├─ fetches nvim config from Gist (fallback /etc/nvim/init.lua)
