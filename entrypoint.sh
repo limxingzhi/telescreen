@@ -14,6 +14,12 @@ if [ -n "${TZ:-}" ]; then
     echo "$TZ" > /etc/timezone
 fi
 
+# Link lazygit config if not present
+if [ ! -f "$HOME/.config/lazygit/config.yml" ]; then
+    mkdir -p "$HOME/.config/lazygit"
+    ln -s /etc/lazygit/config.yml "$HOME/.config/lazygit/config.yml"
+fi
+
 # Bootstrap .zshrc if missing
 if [ ! -f "$ZSHRC" ]; then
   cp /etc/zsh/zshrc "$ZSHRC"

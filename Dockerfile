@@ -58,6 +58,9 @@ RUN ARCH=$(uname -m) && \
     install lazygit /usr/local/bin && \
     rm lazygit lazygit.tar.gz
 
+# Lazygit config (gruvbox-dark theme, outside /root so it survives bind mounts)
+COPY lazygit/ /etc/lazygit/
+
 # Install Crush CLI from GitHub releases
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then CRUSH_ARCH="arm64"; \

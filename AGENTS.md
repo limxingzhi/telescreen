@@ -34,6 +34,7 @@ Dockerfile
   │    ├─ sets TZ
   │    ├─ bootstraps .zshrc → copies /etc/zsh/zshrc
   │    ├─ symlinks tmux.conf → /etc/tmux/tmux.conf
+  │    ├─ symlinks lazygit config → /etc/lazygit/config.yml
   │    ├─ copies plugins    → /opt/tmux-plugins/ → ~/.tmux/plugins/
   │    ├─ copies skills     → /etc/agents/skills/
   │    ├─ fetches nvim config from Gist (fallback /etc/nvim/init.lua)
@@ -45,6 +46,8 @@ Dockerfile
   ├─ crush/
   │    ├─ crush.json         → /etc/crush/crush.json (zai provider, $ZAI_API_KEY, LSPs)
   │    └─ AGENTS.md          → /etc/crush/AGENTS.md (global prefs loaded via context_paths)
+  ├─ lazygit/
+  │    └─ config.yml         → /etc/lazygit/config.yml (gruvbox-material theme)
   ├─ init.zsh               → Shell env (EDITOR, aliases, tat/trun fns, MOTD on login)
   ├─ zshrc                  → Custom .zshrc template (Oh My Zsh + sources init.zsh)
   ├─ nvim/plugin/clipboard.lua → OSC 52 clipboard provider (copied to ~/.config/nvim/plugin/)
