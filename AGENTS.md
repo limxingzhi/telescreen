@@ -81,7 +81,7 @@ Global git conventions live in `crush/AGENTS.md` (loaded via `context_paths` in 
 - Neovim Gist URL hardcoded in `entrypoint.sh`.
 - `LANG=C.UTF-8` is set in the image so tmux enables UTF-8 mode; without it tmux drops multibyte glyphs (`client_utf8=0`) and Nerd Font icons break inside tmux but still render outside it.
 - Tailscale SSH needs ACL policy in admin console.
-- tmux-yank OSC 52 only - no clipboard support in some terminals.
+- tmux-yank OSC 52 only - no xclip/xsel in the image, so `@override_copy_command` copies into the tmux buffer and relies on `set-clipboard`; no clipboard support in some terminals.
 - tmux plugins pre-installed at build time (TPM + tmux-yank), linked on first start.
 - Scratch sessions (`scratch-*`) are persistent - they survive popup close, not killed automatically.
 - `STARSHIP_VERSION` is pinned in the Dockerfile; starship ships static musl tarballs so both arches install the same way.
