@@ -2,7 +2,7 @@
 
 ## Overview
 
-Docker dev environment on `node:26-bookworm`: neovim, tmux, lazygit, TypeScript, Oh My Zsh, Crush, Glow, htop, Tailscale SSH. Published to `ghcr.io` for `linux/amd64`+`linux/arm64`. No tests or linting.
+Docker dev environment on `node:26-bookworm`: neovim, tmux, lazygit, TypeScript, starship, Crush, Glow, htop, Tailscale SSH. Published to `ghcr.io` for `linux/amd64`+`linux/arm64`. No tests or linting.
 
 **Branch tags**: `main` -> `latest` + `YYYY.MM.DD` | non-main branches -> `{branch-name}` + `{branch-name}-YYYY.MM.DD`
 
@@ -32,8 +32,9 @@ No test suite, no linter. Verify changes with `docker build`.
 Dockerfile
   ├─ entrypoint.sh          → Runtime orchestrator (runs as root)
   │    ├─ sets TZ
-  │    ├─ bootstraps .zshrc → copies /etc/zsh/zshrc
+  │    ├─ bootstraps .zshrc → copies /etc/zsh/zshrc (migrates pre-starship copies)
   │    ├─ symlinks tmux.conf → /etc/tmux/tmux.conf
+  │    ├─ symlinks lazygit config → /etc/lazygit/config.yml (replaces empty/stale file)
   │    ├─ copies plugins    → /opt/tmux-plugins/ → ~/.tmux/plugins/
   │    ├─ copies skills     → /etc/agents/skills/
   │    ├─ fetches nvim config from Gist (fallback /etc/nvim/init.lua)
@@ -45,8 +46,11 @@ Dockerfile
   ├─ crush/
   │    ├─ crush.json         → /etc/crush/crush.json (zai provider, $ZAI_API_KEY, LSPs)
   │    └─ AGENTS.md          → /etc/crush/AGENTS.md (global prefs loaded via context_paths)
+  ├─ lazygit/
+  │    └─ config.yml         → /etc/lazygit/config.yml (gruvbox-material theme)
   ├─ init.zsh               → Shell env (EDITOR, aliases, tat/trun fns, MOTD on login)
-  ├─ zshrc                  → Custom .zshrc template (Oh My Zsh + sources init.zsh)
+  ├─ zshrc                  → Custom .zshrc template (starship prompt + sources init.zsh)
+  ├─ starship.toml          → /etc/starship/starship.toml (prompt config, $STARSHIP_CONFIG)
   ├─ nvim/plugin/clipboard.lua → OSC 52 clipboard provider (copied to ~/.config/nvim/plugin/)
   ├─ tmux/
   │    ├─ tmux.conf         → /etc/tmux/tmux.conf (mouse, vi copy, yank, popup, renumber)
@@ -77,6 +81,7 @@ Global git conventions live in `crush/AGENTS.md` (loaded via `context_paths` in 
 - Neovim Gist URL hardcoded in `entrypoint.sh`.
 - `LANG=C.UTF-8` is set in the image so tmux enables UTF-8 mode; without it tmux drops multibyte glyphs (`client_utf8=0`) and Nerd Font icons break inside tmux but still render outside it.
 - Tailscale SSH needs ACL policy in admin console.
-- tmux-yank OSC 52 only - no clipboard support in some terminals.
+- tmux-yank OSC 52 only - no xclip/xsel in the image, so `@override_copy_command` copies into the tmux buffer and relies on `set-clipboard`; no clipboard support in some terminals.
 - tmux plugins pre-installed at build time (TPM + tmux-yank), linked on first start.
 - Scratch sessions (`scratch-*`) are persistent - they survive popup close, not killed automatically.
+- `STARSHIP_VERSION` is pinned in the Dockerfile; starship ships static musl tarballs so both arches install the same way.

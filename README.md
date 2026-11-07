@@ -31,7 +31,7 @@ A cute, opinionated dev environment in a container. One `docker run` and you get
 | Tool | Why you'll love it |
 |------|--------------------|
 | **[Crush](https://github.com/charmbracelet/crush)** | An adorable AI coding assistant that lives in your terminal. Ask it to build, refactor, debug - it just does it. |
-| **Oh My Zsh** | Pretty prompts, sensible defaults, and a warm fuzzy feeling every time you open a shell. |
+| **[starship](https://starship.rs)** | Pretty prompts, sensible defaults, and near-zero shell startup cost. |
 | **Tailscale SSH** | Connect from anywhere on your tailnet with `ssh root@my-dev-env`. No SSH keys to manage, no ports to expose, no networking headaches. |
 | **Neovim** | The latest release. Auto-fetches a config from a Gist on first start, or mount your own. |
 | **tmux** | Persistent sessions with mouse support, vi copy mode, yank-to-clipboard, and a scratch popup. |
@@ -138,7 +138,8 @@ ms -hd                # include hidden files in directory listings
 Configs live in `/etc/` inside the image so they survive mounts on `/root`. For changes that don't need a rebuild, hook into your persistent home volume:
 
 - `~/start.sh` — sourced as bash by the entrypoint once per container start (exports reach your shell). Good for starting services, setting env vars, or wiring up hosts.
-- `~/.zshrc` — your own aliases, functions, and per-shell env (the baked template is only copied when the file is missing).
+- `~/.zshrc` — your own aliases, functions, and per-shell env (the baked template is only copied when the file is missing). An `.zshrc` still sourcing Oh My Zsh is migrated to the starship template once, with the original kept at `~/.zshrc.pre-starship`.
+- Prompt config lives in `/etc/starship/starship.toml` (pointed at by `$STARSHIP_CONFIG`). A `~/.config/starship.toml` is ignored unless you unset `STARSHIP_CONFIG`.
 
 ```sh
 docker run -it --rm -v ./start.sh:/root/start.sh -v dev-env-home:/root dev-env

@@ -5,6 +5,7 @@ ARG LAZYGIT_VERSION=v0.66.2
 ARG CRUSH_VERSION=v0.100.0
 ARG GLOW_VERSION=v3.0.0
 ARG TAILSCALE_VERSION=v1.104.5
+ARG STARSHIP_VERSION=v1.27.0
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm-256color
@@ -58,6 +59,9 @@ RUN ARCH=$(uname -m) && \
     install lazygit /usr/local/bin && \
     rm lazygit lazygit.tar.gz
 
+# Lazygit config (gruvbox-dark theme, outside /root so it survives bind mounts)
+COPY lazygit/ /etc/lazygit/
+
 # Install Crush CLI from GitHub releases
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then CRUSH_ARCH="arm64"; \
@@ -79,10 +83,20 @@ RUN ARCH=$(uname -m) && \
 # TypeScript tooling
 RUN npm install -g --ignore-scripts npm typescript typescript-language-server ts-node tsx http-server eslint bash-language-server markserv
 
-# Oh My Zsh (install to /opt so it survives bind mounts on /root)
-ENV ZSH=/opt/oh-my-zsh
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended \
+# Install starship prompt from GitHub releases (static musl binary)
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ]; then SS_ARCH="aarch64-unknown-linux-musl"; \
+    else SS_ARCH="x86_64-unknown-linux-musl"; fi && \
+    curl -fsSLo starship.tar.gz \
+    "https://github.com/starship/starship/releases/download/${STARSHIP_VERSION}/starship-${SS_ARCH}.tar.gz" && \
+    tar -xzf starship.tar.gz starship && \
+    install starship /usr/local/bin && \
+    rm starship starship.tar.gz \
     && chsh -s /usr/bin/zsh root
+
+# Starship config (outside /root so it survives bind mounts)
+COPY starship.toml /etc/starship/starship.toml
+ENV STARSHIP_CONFIG=/etc/starship/starship.toml
 
 # Home as workspace
 WORKDIR /root

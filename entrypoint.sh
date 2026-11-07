@@ -14,9 +14,34 @@ if [ -n "${TZ:-}" ]; then
     echo "$TZ" > /etc/timezone
 fi
 
-# Bootstrap .zshrc if missing
+# Link lazygit config, replacing an empty file left behind by older images
+LG_CONFIG="$HOME/.config/lazygit/config.yml"
+mkdir -p "$HOME/.config/lazygit"
+if [ -L "$LG_CONFIG" ] && [ ! -e "$LG_CONFIG" ]; then
+    rm -f "$LG_CONFIG"
+elif [ -f "$LG_CONFIG" ] && [ ! -L "$LG_CONFIG" ] && [ ! -s "$LG_CONFIG" ]; then
+    rm -f "$LG_CONFIG"
+fi
+if [ ! -e "$LG_CONFIG" ]; then
+    ln -s /etc/lazygit/config.yml "$LG_CONFIG"
+fi
+
+# Bootstrap .zshrc if missing, or migrate one left over from the Oh My Zsh image
+# (it sources $ZSH/oh-my-zsh.sh, which no longer exists, and errors every shell)
 if [ ! -f "$ZSHRC" ]; then
   cp /etc/zsh/zshrc "$ZSHRC"
+elif grep -q 'oh-my-zsh\.sh' "$ZSHRC"; then
+  cp "$ZSHRC" "$ZSHRC.pre-starship"
+  cp /etc/zsh/zshrc "$ZSHRC"
+  echo "migrated ~/.zshrc to the starship template (old one saved at ~/.zshrc.pre-starship)"
+fi
+
+# Warn instead of silently falling back to a default prompt when starship or
+# its config is missing (e.g. a stale image or a volume masking /etc/starship)
+if ! command -v starship >/dev/null 2>&1; then
+    echo "warn: starship not found, shell will fall back to the default prompt" >&2
+elif [ ! -f "${STARSHIP_CONFIG:-/etc/starship/starship.toml}" ]; then
+    echo "warn: prompt config ${STARSHIP_CONFIG:-/etc/starship/starship.toml} missing, starship will use its defaults" >&2
 fi
 
 # Link tmux config if not present
