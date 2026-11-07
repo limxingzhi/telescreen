@@ -36,6 +36,14 @@ elif grep -q 'oh-my-zsh\.sh' "$ZSHRC"; then
   echo "migrated ~/.zshrc to the starship template (old one saved at ~/.zshrc.pre-starship)"
 fi
 
+# Warn instead of silently falling back to a default prompt when starship or
+# its config is missing (e.g. a stale image or a volume masking /etc/starship)
+if ! command -v starship >/dev/null 2>&1; then
+    echo "warn: starship not found, shell will fall back to the default prompt" >&2
+elif [ ! -f "${STARSHIP_CONFIG:-/etc/starship/starship.toml}" ]; then
+    echo "warn: prompt config ${STARSHIP_CONFIG:-/etc/starship/starship.toml} missing, starship will use its defaults" >&2
+fi
+
 # Link tmux config if not present
 if [ ! -f "$TMUX_CONFIG" ]; then
     ln -s /etc/tmux/tmux.conf "$TMUX_CONFIG"

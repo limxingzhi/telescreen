@@ -5,4 +5,6 @@ setopt SHARE_HISTORY HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE AUTO_CD EXTENDED_GLO
 
 eval "$(starship init zsh)"
 
+export STARSHIP_CONFIG="${STARSHIP_CONFIG:-/etc/starship/starship.toml}"
+
 source /etc/zsh/init.zsh
