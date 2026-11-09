@@ -18,7 +18,7 @@ live as `ARG`s in the `Dockerfile`; check for upstream releases with the
 | Run | `docker run -it --rm telescreen` |
 | Persistent home | `docker run -it --rm -v dev-env-home:/root telescreen` |
 | Timezone | `-e TZ=America/New_York` |
-| Crush | `-e ZAI_API_KEY=your-key` |
+| Crush | `-e DEEPSEEK_API_KEY=your-key` |
 | Multi-arch | `docker buildx build --platform linux/amd64,linux/arm64 -t telescreen .` |
 
 Tailscale SSH needs three things that Docker cannot grant on its own:

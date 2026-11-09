@@ -2,7 +2,7 @@
   "$schema": "https://charm.land/crush.json",
   "models": {
     "large": {
-      "model": "deepseek-v4-pro",
+      "model": "deepseek-v4-flash",
       "provider": "deepseek",
       "think": true,
       "max_tokens": 65536

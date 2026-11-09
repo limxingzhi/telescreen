@@ -100,17 +100,22 @@ State is persisted in the `tailscale-state` volume - omit `TS_AUTHKEY` on subseq
 
 ## Using Crush
 
-Crush uses [Z.AI](https://z.ai) directly (no gateway). Pass your API key at runtime:
+Crush uses [DeepSeek](https://api.deepseek.com) directly (no gateway). Pass your
+API key as a runtime env var:
 
 ```sh
-docker run -it --rm -v dev-env-home:/root -e ZAI_API_KEY=your-key dev-env
+docker run -it --rm -v dev-env-home:/root -e DEEPSEEK_API_KEY=your-key dev-env
 ```
+
+`crush/crush.json` refers to the key as `$DEEPSEEK_API_KEY`, so Crush resolves it
+from the environment on every start and never writes it to disk. Keep it out of
+the image and out of a committed file; a shell alias or `direnv` is enough.
 
 Then just run `crush` and start chatting.
 
 ### Long-turn notifications
 
-Crush hooks in `/etc/crush/crush.json` watch `TurnStart`/`TurnEnd`. When a turn runs for 30 seconds or longer, `crush/notify/turn-notify.js` fires a desktop notification through OSC 9 (`ESC ] 9 ; message BEL`), which Ghostty renders natively as a Ghostty notification. The same sequence is pushed into the tmux session running Crush, so it also shows on the tmux status line, and the terminal running Ghostty sees it even when another pane is focused.
+Crush hooks in `/etc/crush/crush.json` watch `TurnStart`/`TurnEnd`. When a turn runs for 8 seconds or longer, `crush/notify/turn-notify.js` fires a desktop notification through OSC 9 (`ESC ] 9 ; message BEL`), which Ghostty renders natively as a Ghostty notification. The same sequence is pushed into the tmux session running Crush, so it also shows on the tmux status line, and the terminal running Ghostty sees it even when another pane is focused.
 
 - Time is measured from `TurnStart`, so permission prompts are included. Time spent waiting for you to type is not.
 - The hook writes the sequence to its own stdout, spools it under `~/.local/state/crush-notify/`, and writes it to the Crush pane's tty. On the next prompt in any shell, `drain.js` replays anything spooled for a pane you were not looking at.
@@ -254,7 +259,7 @@ services:
     environment:
       - TS_AUTHKEY=tskey-auth-keygoeshere
       - TS_HOSTNAME=my-dev-env
-      - ZAI_API_KEY=your-zai-api-key
+      - DEEPSEEK_API_KEY=your-deepseek-api-key
 
 volumes:
   dev-home:
@@ -280,7 +285,7 @@ Built into every shell:
 |----------|-------------|
 | `TS_AUTHKEY` | Tailscale auth key. Required on first run; optional after that if state is persisted. |
 | `TS_HOSTNAME` | Hostname for the Tailscale node (e.g. `my-dev-env` → SSH via `ssh root@my-dev-env`) |
-| `ZAI_API_KEY` | Z.AI API key for Crush. Required for AI features. Get one at [z.ai](https://z.ai). |
+| `DEEPSEEK_API_KEY` | DeepSeek API key for Crush, expanded from `$DEEPSEEK_API_KEY` in `crush.json`. Required for AI features. Get one at [platform.deepseek.com](https://platform.deepseek.com). |
 
 ## Multi-architecture
 

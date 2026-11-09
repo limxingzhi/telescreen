@@ -73,21 +73,22 @@ if [ ! -d /root/.tmux/plugins/tpm ]; then
 fi
 
 # Ensure Crush config exists in default data path (prevents first-run override)
-mkdir -p /root/.local/share/crush
-if [ ! -f /root/.local/share/crush/crush.json ]; then
-    cp /etc/crush/crush.json /root/.local/share/crush/crush.json
+# Crush keeps its own copy under the data dir, which wins over the baked config.
+# Only seed it when missing: Crush writes runtime settings (provider keys,
+# recent models) back into this file, so replacing it would drop those.
+CRUSH_COPY="$HOME/.local/share/crush/crush.json"
+mkdir -p "$(dirname "$CRUSH_COPY")"
+if [ ! -s "$CRUSH_COPY" ]; then
+    cp /etc/crush/crush.json "$CRUSH_COPY"
 fi
 
-# Move skills to .config/agents/skills
+# Move skills to .config/agents/skills. Image skills are replaced so a rebuild
+# that changes one is not shadowed; skills that exist only in the home are kept.
 mkdir -p /root/.config/agents/skills
 for item in /etc/agents/skills/*; do
     name=$(basename "$item")
-
-    if [ ! -e "/root/.config/agents/skills/$name" ]; then
-        cp -r "$item" /root/.config/agents/skills
-    else
-        echo "Skipping existing: $name"
-    fi
+    rm -rf "/root/.config/agents/skills/$name"
+    cp -r "$item" /root/.config/agents/skills
 done
 
 # Start Tailscale if auth key is provided

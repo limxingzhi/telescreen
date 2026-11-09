@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Crush TurnStart/TurnEnd hook: notify the terminal when a long turn ends.
 //
-// A turn lasting CRUSH_NOTIFY_THRESHOLD seconds or more (default 30, wall
+// A turn lasting CRUSH_NOTIFY_THRESHOLD seconds or more (default 8, wall
 // clock from TurnStart, permission prompts included) emits an OSC 9 desktop
 // notification, which Ghostty renders natively. The sequence goes three ways:
 // stdout of the TurnEnd hook, a spool file replayed by the shell prompt, and
@@ -40,7 +40,7 @@ export function config(env = process.env) {
     spoolDir: path.join(dir, "spool"),
     logFile: path.join(dir, "hook.log"),
     disableFlag: path.join(dir, "disabled"),
-    threshold: Number(env.CRUSH_NOTIFY_THRESHOLD || 30),
+    threshold: Number(env.CRUSH_NOTIFY_THRESHOLD || 8),
     passthrough: env.CRUSH_NOTIFY_PASSTHROUGH !== "0",
   };
 }
@@ -379,7 +379,7 @@ export async function handle(raw, settings, opts = {}) {
   if (fs.existsSync(settings.disableFlag)) return "";
 
   const elapsed = await measure(settings, session, parentPid, at);
-  const threshold = Number(settings.threshold) || 30;
+  const threshold = Number(settings.threshold) || 8;
   if (Number(elapsed) < threshold * 1000) return "";
   const panned = inTmux() && !paneOf(await listPanes(queueBin), session);
   // Only the spool replay can land with the terminal showing another pane.

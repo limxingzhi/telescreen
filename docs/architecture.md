@@ -21,7 +21,7 @@ Dockerfile
   │    └─ exec "$@" (zsh)
   │
   ├─ crush/
-  │    ├─ crush.json         → /etc/crush/crush.json (provider, $ZAI_API_KEY, LSPs,
+  │    ├─ crush.json         → /etc/crush/crush.json (provider, $DEEPSEEK_API_KEY, LSPs,
   │    │                       TurnStart/TurnEnd notification hooks)
   │    ├─ AGENTS.md          → /etc/crush/AGENTS.md (global prefs loaded via context_paths)
   │    └─ notify/            → /etc/crush/notify/ (turn-notify.js, drain.js)
@@ -56,6 +56,7 @@ still finds its configs with an empty or foreign home.
 | lazygit | `/etc/lazygit/config.yml` | symlinked, replacing empty/stale files |
 | Crush | `/etc/crush/crush.json` | `CRUSH_GLOBAL_CONFIG` env var |
 | Crush global prefs | `/etc/crush/AGENTS.md` | `context_paths` in `crush.json` |
+| Provider API key | `DEEPSEEK_API_KEY` | `docker run -e` env var, expanded from `$DEEPSEEK_API_KEY` in `crush.json` |
 | tmux plugins | `/opt/tmux-plugins/` | copied to `~/.tmux/plugins/` |
 
 ## Runtime customization

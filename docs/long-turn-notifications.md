@@ -1,6 +1,6 @@
 # Long-turn notifications
 
-When a Crush turn runs for 30 seconds or more, the container fires a desktop
+When a Crush turn runs for 8 seconds or more, the container fires a desktop
 notification in the Ghostty terminal on your Mac. Crush runs in tmux on a VPS
 over Tailscale SSH, so the notification has to survive tmux and the SSH hop, and
 still arrive when you are looking at a different pane or another app.
@@ -33,15 +33,15 @@ On `TurnStart`, `measure()` writes `{"pid": <crush pid>, "since": <ms>}` to
 `TMUX_SESSION` when present, otherwise the payload's `session_id`, so each Crush
 session gets its own file.
 
-## 3. Deciding whether 30 seconds passed
+## 3. Deciding whether 8 seconds passed
 
 On `TurnEnd` it calls `measure()` again, which returns `now - since`, the
 wall-clock elapsed time in milliseconds (`turn-notify.js:148-173`). The guard
 then buys the comparison in matching units:
 
 ```js
-const threshold = Number(settings.threshold) || 30;   // seconds
-if (Number(elapsed) < threshold * 1000) return "";    // 30_000 ms
+const threshold = Number(settings.threshold) || 8;    // seconds
+if (Number(elapsed) < threshold * 1000) return "";    // 8_000 ms
 ```
 
 Wall-clock time means **permission prompts count**: if Crush waits 40 seconds for
@@ -151,7 +151,7 @@ closes.
 
 | What | How |
 |------|-----|
-| Threshold | `CRUSH_NOTIFY_THRESHOLD=<seconds>` (default 30), e.g. in `~/start.sh` |
+| Threshold | `CRUSH_NOTIFY_THRESHOLD=<seconds>` (default 8), e.g. in `~/start.sh` |
 | Mute | `touch ~/.local/state/crush-notify/disabled` |
 | Log | `~/.local/state/crush-notify/hook.log` |
 | Disable the prompt drain | `CRUSH_NOTIFY_NO_DRAIN=1` |
@@ -169,7 +169,7 @@ long turns.
 node --test scripts/test-crush-notify.js
 ```
 
-The suite injects the clock, so the 29.9s/30s boundary is tested in both
+The suite injects the clock, so the 7.9s/8s boundary is tested in both
 directions, along with OSC 9 formatting, control-character stripping, the kill
 switch, tmux targeting, the spool cap, orphaned-turn collapse, and the drain
 (tty, pipe, missing spool).
