@@ -41,12 +41,9 @@ Things that cost time once and will cost it again.
   tarballs, so both architectures install the same way.
 - The Neovim Gist URL is hardcoded in `entrypoint.sh`.
 - `releases/download/...` URLs intermittently answer `504` from GitHub's CDN
-  and are rate-limited anonymously. CI passes its job token to the build as the
-  `github_token` BuildKit secret (locally:
-  `docker buildx build --secret id=github_token,env=GITHUB_TOKEN`); each
-  download step mounts it and sends `Authorization: Bearer <token>`, falling
-  back to an unauthenticated request when the secret is absent. Every download
-  also uses `--retry 5 --retry-all-errors`.
+  and are rate-limited anonymously. Builds do not authenticate to GitHub, so
+  every download uses `--retry 5 --retry-all-errors` (Neovim also sets
+  `--retry-delay 5`) to ride out transient failures.
 
 ## Crush notifications
 
