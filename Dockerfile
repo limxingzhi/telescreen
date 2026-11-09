@@ -1,7 +1,7 @@
 FROM node:26-bookworm
 
 ARG NVIM_VERSION=v0.12.6
-ARG LAZYGIT_VERSION=v0.66.2
+ARG LAZYGIT_VERSION=v0.66.3
 ARG CRUSH_VERSION=v0.100.0
 ARG GLOW_VERSION=v3.0.0
 ARG TAILSCALE_VERSION=v1.104.5
@@ -40,7 +40,8 @@ RUN apt-get update && apt-get install -y \
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then NV_ARCH="linux-arm64"; \
     else NV_ARCH="linux-x86_64"; fi && \
-    curl -fsSLo nvim.tar.gz "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-${NV_ARCH}.tar.gz" && \
+    curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 -o nvim.tar.gz \
+      "https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/nvim-${NV_ARCH}.tar.gz" && \
     tar -xzf nvim.tar.gz && \
     mv nvim-${NV_ARCH} /opt/nvim && \
     ln -s /opt/nvim/bin/nvim /usr/local/bin/nvim && \
@@ -53,7 +54,7 @@ RUN ARCH=$(uname -m) && \
     else \
         LG_ARCH="x86_64"; \
     fi && \
-    curl -fsSLo lazygit.tar.gz \
+    curl -fsSL --retry 5 --retry-all-errors -o lazygit.tar.gz \
     https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION#v}_Linux_${LG_ARCH}.tar.gz && \
     tar -xzf lazygit.tar.gz lazygit && \
     install lazygit /usr/local/bin && \
@@ -66,7 +67,7 @@ COPY lazygit/ /etc/lazygit/
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then CRUSH_ARCH="arm64"; \
     else CRUSH_ARCH="amd64"; fi && \
-    curl -fsSLo /tmp/crush.deb \
+    curl -fsSL --retry 5 --retry-all-errors -o /tmp/crush.deb \
       "https://github.com/charmbracelet/crush/releases/download/${CRUSH_VERSION}/crush_${CRUSH_VERSION#v}_${CRUSH_ARCH}.deb" && \
     dpkg -i /tmp/crush.deb && \
     rm /tmp/crush.deb
@@ -75,7 +76,7 @@ RUN ARCH=$(uname -m) && \
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then GLOW_ARCH="arm64"; \
     else GLOW_ARCH="amd64"; fi && \
-    curl -fsSLo /tmp/glow.deb \
+    curl -fsSL --retry 5 --retry-all-errors -o /tmp/glow.deb \
       "https://github.com/charmbracelet/glow/releases/download/${GLOW_VERSION}/glow_${GLOW_VERSION#v}_${GLOW_ARCH}.deb" && \
     dpkg -i /tmp/glow.deb && \
     rm /tmp/glow.deb
@@ -87,7 +88,7 @@ RUN npm install -g --ignore-scripts npm typescript typescript-language-server ts
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then SS_ARCH="aarch64-unknown-linux-musl"; \
     else SS_ARCH="x86_64-unknown-linux-musl"; fi && \
-    curl -fsSLo starship.tar.gz \
+    curl -fsSL --retry 5 --retry-all-errors -o starship.tar.gz \
     "https://github.com/starship/starship/releases/download/${STARSHIP_VERSION}/starship-${SS_ARCH}.tar.gz" && \
     tar -xzf starship.tar.gz starship && \
     install starship /usr/local/bin && \
@@ -116,6 +117,7 @@ COPY skills/ /etc/agents/skills/
 
 # Crush config + global instructions (outside /root so it survives bind mounts)
 COPY crush/ /etc/crush/
+RUN chmod +x /etc/crush/notify/*.js
 ENV CRUSH_GLOBAL_CONFIG=/etc/crush/crush.json
 
 # Shell config (outside /root so it survives bind mounts)

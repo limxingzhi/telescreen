@@ -2,7 +2,7 @@
   "$schema": "https://charm.land/crush.json",
   "models": {
     "large": {
-      "model": "deepseek-v4-pro",
+      "model": "deepseek-v4-flash",
       "provider": "deepseek",
       "think": true,
       "max_tokens": 65536
@@ -41,7 +41,8 @@
           "cost_per_1m_in_cached": 0.0028,
           "cost_per_1m_out_cached": 0.28,
           "context_window": 1000000,
-          "default_max_tokens": 384000
+          "default_max_tokens": 384000,
+          "can_reason": true
         },
         {
           "id": "deepseek-v4-pro",
@@ -67,5 +68,28 @@
       "command": "bash-language-server",
       "args": ["start"]
     }
+  },
+  "hooks": {
+    "TurnStart": [
+      {
+        "name": "turn-notify-start",
+        "command": "/etc/crush/notify/turn-notify.js",
+        "timeout": 5
+      }
+    ],
+    "TurnEnd": [
+      {
+        "name": "turn-notify-end",
+        "command": "/etc/crush/notify/turn-notify.js",
+        "timeout": 5
+      }
+    ],
+    "SessionEnd": [
+      {
+        "name": "session-notify-cleanup",
+        "command": "/etc/crush/notify/turn-notify.js",
+        "timeout": 5
+      }
+    ]
   }
 }

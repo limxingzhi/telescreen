@@ -36,6 +36,19 @@ elif grep -q 'oh-my-zsh\.sh' "$ZSHRC"; then
   echo "migrated ~/.zshrc to the starship template (old one saved at ~/.zshrc.pre-starship)"
 fi
 
+# Pre-starship `.zshrc` copies predate the notification drain hook; add it once
+if grep -q 'starship init' "$ZSHRC" && ! grep -q 'precmd_crush_notify' "$ZSHRC"; then
+    cat >> "$ZSHRC" <<'DRAIN'
+
+# Long Crush turns spool an OSC 9 notification; replay it at the next prompt in
+# whichever pane you are looking at (tmux cannot inject escapes into a program)
+if [[ -o interactive && -z "${CRUSH_NOTIFY_NO_DRAIN:-}" ]]; then
+  precmd_crush_notify() { /etc/crush/notify/drain.js 2>/dev/null }
+  precmd_functions+=(precmd_crush_notify)
+fi
+DRAIN
+fi
+
 # Warn instead of silently falling back to a default prompt when starship or
 # its config is missing (e.g. a stale image or a volume masking /etc/starship)
 if ! command -v starship >/dev/null 2>&1; then
@@ -47,6 +60,9 @@ fi
 # Link tmux config if not present
 if [ ! -f "$TMUX_CONFIG" ]; then
     ln -s /etc/tmux/tmux.conf "$TMUX_CONFIG"
+# Older config copies predate the passthrough setting the notification hook needs
+elif ! grep -q 'allow-passthrough' "$TMUX_CONFIG" 2>/dev/null; then
+    printf '\n# Let the Crush notification hook write OSC 9 to the terminal\nset -g allow-passthrough on\n' >> "$TMUX_CONFIG"
 fi
 
 # Copy tmux plugins if not present
@@ -57,21 +73,22 @@ if [ ! -d /root/.tmux/plugins/tpm ]; then
 fi
 
 # Ensure Crush config exists in default data path (prevents first-run override)
-mkdir -p /root/.local/share/crush
-if [ ! -f /root/.local/share/crush/crush.json ]; then
-    cp /etc/crush/crush.json /root/.local/share/crush/crush.json
+# Crush keeps its own copy under the data dir, which wins over the baked config.
+# Only seed it when missing: Crush writes runtime settings (provider keys,
+# recent models) back into this file, so replacing it would drop those.
+CRUSH_COPY="$HOME/.local/share/crush/crush.json"
+mkdir -p "$(dirname "$CRUSH_COPY")"
+if [ ! -s "$CRUSH_COPY" ]; then
+    cp /etc/crush/crush.json "$CRUSH_COPY"
 fi
 
-# Move skills to .config/agents/skills
+# Move skills to .config/agents/skills. Image skills are replaced so a rebuild
+# that changes one is not shadowed; skills that exist only in the home are kept.
 mkdir -p /root/.config/agents/skills
 for item in /etc/agents/skills/*; do
     name=$(basename "$item")
-
-    if [ ! -e "/root/.config/agents/skills/$name" ]; then
-        cp -r "$item" /root/.config/agents/skills
-    else
-        echo "Skipping existing: $name"
-    fi
+    rm -rf "/root/.config/agents/skills/$name"
+    cp -r "$item" /root/.config/agents/skills
 done
 
 # Start Tailscale if auth key is provided
