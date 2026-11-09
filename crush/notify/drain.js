@@ -9,14 +9,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { config, supportsOsc9 } from "./turn-notify.js";
+import { config, printsOsc9 } from "./turn-notify.js";
 
 const SPOOL_TTL_MS = 12 * 3600 * 1000;
 
 export function drain(spoolDir, out = process.stdout, now = Date.now(), term = process.env.TERM) {
-  // A terminal without OSC 9 support prints the payload as text (see
-  // supportsOsc9), which is the takeover this drain is meant to avoid.
-  if (!out.isTTY || !supportsOsc9(term)) return 0;
+  // A terminal that would print the payload as text is the takeover this drain
+  // exists to avoid. Pass-through terms (tmux, ssh) name no terminal of their
+  // own, so they are replayed: the terminal behind them is the one that renders.
+  if (!out.isTTY || printsOsc9(term)) return 0;
   let entries;
   try {
     entries = fs.readdirSync(spoolDir).filter((name) => name.endsWith(".osc")).sort();

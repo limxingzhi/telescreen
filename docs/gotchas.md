@@ -60,8 +60,15 @@ Details in [long-turn-notifications.md](long-turn-notifications.md).
 - Terminals that do not decode OSC 9 do not swallow it either: the xterm
   sequence parser prints the body (`Crush finished (2m51s): <message>`) as
   plain text in the pane and only repaints over it at the next prompt, which
-  looks like the notification took over the session. That is why the hook gates
-  on `TERM` (`supportsOsc9`) instead of firing everywhere and hoping.
+  looks like the notification took over the session. The hook therefore skips
+  only terms that say they cannot render it (`dumb`), not every term missing
+  from a short allowlist: inside the container `TERM` is what tmux and ssh
+  report (`xterm-256color`, `tmux-256color`), so an allowlist matched nothing
+  and silently disabled every delivery path.
+- Clients listed by `list-clients` can close before the detached write runs. A
+  combined multi-client script then exits 2, and tmux prints the script and
+  `returned 2` into the pane instead of notifying, so each client gets its own
+  write ending in `; true`.
 - The `options.notifications` value in `crush.json` is Crush's own and has no
   effect on this hook; the hook never reads it. Mute with
   `touch ~/.local/state/crush-notify/disabled` or `CRUSH_NOTIFY_NO_DRAIN=1`, or

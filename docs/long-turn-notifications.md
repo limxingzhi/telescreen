@@ -100,15 +100,21 @@ smuggle a second escape sequence into your terminal.
 | spool file | `~/.local/state/crush-notify/spool/*.osc`; `drain.js` replays them as a zsh `precmd` hook | the pane you are actually looking at |
 | tmux client tty | `tmux run-shell -b` writes the bytes to the tty of every client attached to the Crush session | terminal is focused on another pane or session |
 
-### Only notifying terminals get the sequence
+### Which terminals get the sequence
 
-`supportsOsc9()` gates the whole thing on `TERM` being `xterm-ghostty`,
-`ghostty`, `xterm-kitty`, or `wezterm`. Every other terminal, and every tmux
-client tty whose `TERM` is not on that list (plain `xterm-256color` over SSH,
-say), is skipped: the hook logs `skipped ... (no OSC 9)` and returns nothing.
 Terminals do not ignore an OSC 9 they do not understand, they print the body as
 plain text, which is what makes a notification look like it took over the
-session.
+session. The guard is therefore an exclusion, not an allowlist:
+`printsOsc9()` skips only a `TERM` that names a terminal without notification
+support (`dumb`, `unknown`).
+
+An allowlist of `xterm-ghostty`/`ghostty`/`xterm-kitty`/`wezterm` defined the
+bug for a while: `TERM` inside the container is what tmux and ssh report
+(`xterm-256color`, `tmux-256color`, `screen-256color`), never the Ghostty
+window on the Mac. Every turn logged `skipped ... (no OSC 9)` and no path
+delivered anything, because stdout is suppressed inside tmux and the spool was
+never written. `supportsOsc9()` still exists for tests and documentation, but
+delivery no longer depends on it.
 
 Two guards keep the printed copy away from panes that would show it as text:
 
@@ -118,7 +124,7 @@ Two guards keep the printed copy away from panes that would show it as text:
   (`TMUX_PANE`), the hook skips both stdout and the client-tty write and leaves
   the notification to the spool replay, which only an idle prompt picks up.
 
-`drain.js` applies the same `TERM` gate before replaying anything.
+`drain.js` applies the same exclusion before replaying anything.
 
 ### Why the tmux path is wrapped in passthrough
 
@@ -135,6 +141,13 @@ into the pane. `send-keys` writes into the pane's input stream, where the bytes
 land in the shell's buffer and mangle whatever you were typing. `run-shell -b`
 detaches the write so a turn is never held up, and the hook gives up quickly on
 every delivery path: failures are logged and it still exits 0.
+
+Each client gets its own `run-shell -b` write ending in `; true`. A single
+combined script was the second bug: clients come and go, so a tty listed by
+`list-clients` can be closed by the time the write runs, and one dead tty made
+the whole script exit 2. Because that failure was inside a detached
+`run-shell -b`, tmux printed the script and `returned 2` into the pane instead
+of notifying, and no client got the sequence.
 
 The prompt drain exists because only the shell can print an escape sequence
 into its own pane; tmux cannot inject one into a program it is not running.
@@ -172,7 +185,22 @@ node --test scripts/test-crush-notify.js
 The suite injects the clock, so the 7.9s/8s boundary is tested in both
 directions, along with OSC 9 formatting, control-character stripping, the kill
 switch, tmux targeting, the spool cap, orphaned-turn collapse, and the drain
-(tty, pipe, missing spool).
+(tty, pipe, missing spool). It also pins the two delivery bugs by driving
+`enqueue()` with a fixed client listing: a pass-through `TERM` still delivers,
+a term that cannot render is skipped, and each client gets its own write that
+cannot fail the others. One test runs `writeScript()` through `/bin/sh` and
+compares the bytes, because a split or requoted sequence prints as text.
+
+Checking by hand:
+
+```sh
+# The hook must not log "skipped ... (no OSC 9)" for a tmux/ssh TERM
+tail ~/.local/state/crush-notify/hook.log
+# A spool file appearing here means the turn notified
+ls ~/.local/state/crush-notify/spool
+# Each client gets one write; none may exit non-zero
+tmux list-clients -F '#{client_session} #{client_name} #{client_termname}'
+```
 
 Known gaps: notification attribution on a Mac with several tmux sessions sharing
 one Ghostty window is untested, and the hook paths assume the container layout

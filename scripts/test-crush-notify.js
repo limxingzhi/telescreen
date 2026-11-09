@@ -235,10 +235,10 @@ test("passthrough wraps the sequence in DCS", () => {
   assert.strictEqual(hook.passthrough({ passthrough: false }, raw), raw);
 });
 
-test("writeScript targets the client tty", () => {
+test("writeScript targets the client tty and cannot fail the script", () => {
   assert.strictEqual(
     hook.writeScript("/dev/pts/3", "\x1b]9;hi\x07"),
-    "printf %s '\x1b[!p\x1b]9;hi\x07' > '/dev/pts/3'",
+    "printf %s '\x1b[!p\x1b]9;hi\x07' > '/dev/pts/3'; true",
   );
 });
 
@@ -251,12 +251,15 @@ test("enqueue writes to every client of the session", async () => {
   const ok = await hook.enqueue("tmux", "\x1b]9;hi\x07", "work", run, { passthrough: true });
   assert.strictEqual(ok, true);
   assert.strictEqual(seen.length, 1);
-  assert.deepStrictEqual(seen[0], ["tmux", "list-clients", "-F", "#{client_session}\t#{client_name}\t#{client_termname}"]);
+  assert.deepStrictEqual(seen[0], ["tmux", "list-clients", "-F", "#{client_session}\t#{client_name}\t#{client_termname}\t#{client_terminal_features}"]);
 });
 
 test("enqueue gives up when no client matches", async () => {
   const run = (bin, args, opts, cb) => cb(null, "other\t/dev/pts/9\txterm-ghostty\n");
-  assert.strictEqual(await hook.enqueue("tmux", "x", "work", run), false);
+  const sent = [];
+  const send = (bin, script) => sent.push(script);
+  assert.strictEqual(await hook.enqueue("tmux", "x", "work", run, {}, send), false);
+  assert.deepStrictEqual(sent, []);
 });
 
 test("drain replays and removes", (t) => {
@@ -271,15 +274,28 @@ test("drain replays and removes", (t) => {
   assert.deepStrictEqual(fs.readdirSync(settings.spoolDir), []);
 });
 
-test("drain leaves the spool alone for a terminal without OSC 9", (t) => {
+test("drain leaves the spool alone for a terminal that would print the body", (t) => {
   const { settings } = workspace(t);
   fs.mkdirSync(settings.spoolDir, { recursive: true });
   fs.writeFileSync(path.join(settings.spoolDir, "1.osc"), "\x1b]9;one\x07");
   const chunks = [];
   const out = { isTTY: true, write: (s) => chunks.push(s) };
-  assert.strictEqual(drain.drain(settings.spoolDir, out, Date.now(), "xterm-256color"), 0);
+  assert.strictEqual(drain.drain(settings.spoolDir, out, Date.now(), "dumb"), 0);
   assert.deepStrictEqual(chunks, []);
   assert.strictEqual(fs.readdirSync(settings.spoolDir).length, 1);
+});
+
+// A terminal reached through tmux reports `tmux-256color` or `screen-256color`
+// and one reached over ssh reports `xterm-256color`: none of those name the
+// terminal that renders the sequence, so none of them may block delivery.
+test("pass-through terms still drain", (t) => {
+  const { settings } = workspace(t);
+  fs.mkdirSync(settings.spoolDir, { recursive: true });
+  fs.writeFileSync(path.join(settings.spoolDir, "1.osc"), "\x1b]9;one\x07");
+  const chunks = [];
+  const out = { isTTY: true, write: (s) => chunks.push(s) };
+  assert.strictEqual(drain.drain(settings.spoolDir, out, Date.now(), "tmux-256color"), 1);
+  assert.strictEqual(chunks.join(""), "\x1b]9;one\x07");
 });
 
 test("supportsOsc9 recognises notifying terminals only", () => {
@@ -291,14 +307,24 @@ test("supportsOsc9 recognises notifying terminals only", () => {
   }
 });
 
-test("terminal without OSC 9 notifies nowhere", async (t) => {
+test("printsOsc9 only skips terms that cannot render it", () => {
+  for (const term of ["xterm-ghostty", "xterm-kitty", "wezterm"]) {
+    assert.strictEqual(hook.printsOsc9(term), false, term);
+  }
+  for (const term of ["xterm-256color", "screen", "screen-256color", "tmux-256color", "", undefined]) {
+    assert.strictEqual(hook.printsOsc9(term), false, String(term));
+  }  for (const term of ["dumb", "unknown"]) assert.strictEqual(hook.printsOsc9(term), true, term);
+});
+
+// The hook runs inside tmux over ssh, where TERM is the pass-through, not the
+// Ghostty window. Skipping on it silenced all three delivery paths.
+test("a pass-through term still notifies", async (t) => {
   const { settings } = workspace(t);
-  const { clock, runHook, spooled, calls } = harness(t, settings);
+  const { clock, runHook, spooled } = harness(t, settings);
   await runHook("TurnStart");
   clock.now += 60_000;
   assert.strictEqual(await runHook("TurnEnd", { term: "xterm-256color" }), "");
-  assert.deepStrictEqual(spooled(), []);
-  assert.deepStrictEqual(calls, []);
+  assert.strictEqual(spooled().length, 1);
 });
 
 test("a terminal showing another pane only gets the spool", async (t) => {
@@ -312,19 +338,48 @@ test("a terminal showing another pane only gets the spool", async (t) => {
   assert.deepStrictEqual(calls, []);
 });
 
-test("enqueue skips clients that would print the sequence", async () => {
+test("enqueue skips clients that report a terminal without OSC 9", async (t) => {
   let calls = 0;
+  const spawns = [];
   const run = (bin, args, opts, cb) => {
     calls += 1;
-    cb(null, "work\t/dev/pts/2\txterm-256color\nwork\t/dev/pts/5\txterm-ghostty\n");
+    cb(null, "work\t/dev/pts/2\tdumb\nwork\t/dev/pts/5\txterm-ghostty\n");
   };
-  assert.strictEqual(await hook.enqueue("tmux", "\x1b]9;hi\x07", "work", run), true);
+  const send = (bin, script) => spawns.push(script);
+  assert.strictEqual(await hook.enqueue("tmux", "\x1b]9;hi\x07", "work", run, {}, send), true);
   assert.strictEqual(calls, 1);
+  assert.strictEqual(spawns.length, 1);
+  assert.match(spawns[0], /\/dev\/pts\/5/);
+  assert.doesNotMatch(spawns[0], /\/dev\/pts\/2/);
 });
 
-test("enqueue gives up when every client lacks OSC 9", async () => {
-  const run = (bin, args, opts, cb) => cb(null, "work\t/dev/pts/2\txterm-256color\n");
-  assert.strictEqual(await hook.enqueue("tmux", "x", "work", run), false);
+test("enqueue gives up when every client reports a terminal without OSC 9", async (t) => {
+  const spawns = [];
+  const run = (bin, args, opts, cb) => cb(null, "work\t/dev/pts/2\tdumb\n");
+  const send = (bin, script) => spawns.push(script);
+  assert.strictEqual(await hook.enqueue("tmux", "x", "work", run, {}, send), false);
+  assert.deepStrictEqual(spawns, []);
+});
+
+// `TERM=xterm-256color` is what tmux and ssh report, not the terminal that
+// receives the bytes, so it cannot prove the terminal would print the body.
+test("a client term that cannot prove OSC 9 support still gets the write", async (t) => {
+  const spawns = [];
+  const run = (bin, args, opts, cb) => cb(null, "work\t/dev/pts/0\txterm-256color\n");
+  const send = (bin, script) => spawns.push(script);
+  assert.strictEqual(await hook.enqueue("tmux", "\x1b]9;hi\x07", "work", run, {}, send), true);
+  assert.strictEqual(spawns.length, 1);
+});
+
+test("one write per client so a dead tty cannot stop the live ones", async (t) => {
+  const scripts = [];
+  const run = (bin, args, opts, cb) => {
+    cb(null, "work\t/dev/pts/2\txterm-ghostty\nwork\t/dev/pts/5\txterm-ghostty\n");
+  };
+  const send = (bin, script) => scripts.push(script);
+  assert.strictEqual(await hook.enqueue("tmux", "\x1b]9;hi\x07", "work", run, {}, send), true);
+  assert.strictEqual(scripts.length, 2);
+  for (const script of scripts) assert.match(script, /; true$/);
 });
 
 test("sweep drops only files stamped inside the window", async (t) => {
@@ -365,4 +420,22 @@ test("drain is silent on a pipe", (t) => {
 test("drain ignores a missing spool", (t) => {
   const { settings } = workspace(t);
   assert.strictEqual(drain.drain(settings.spoolDir, { isTTY: true, write: () => {} }), 0);
+});
+
+// The write runs through /bin/sh with literal control bytes inside single
+// quotes, so this pins the bytes that actually leave the script. A soft reset
+// (DECSTR) leads so a terminal that does print the body starts on a clean line.
+test("write script reproduces the sequence byte for byte", (t) => {
+  const file = path.join(workspace(t).root, "tty");
+  const raw = "\x1b]9;Crush finished (1m05s): done\x07";
+  const cases = [
+    { passthrough: true, expected: `\x1b[!p\x1bPtmux;\x1b\x1b${raw}\x1b\\` },
+    { passthrough: false, expected: `\x1b[!p${raw}` },
+  ];
+  for (const { passthrough, expected } of cases) {
+    fs.writeFileSync(file, "");
+    const settings = { passthrough };
+    execFileSync("/bin/sh", ["-c", hook.writeScript(file, hook.passthrough(settings, raw))]);
+    assert.strictEqual(fs.readFileSync(file, "utf8"), expected, `passthrough=${passthrough}`);
+  }
 });

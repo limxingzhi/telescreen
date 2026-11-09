@@ -28,9 +28,22 @@ const SAMPLE_MS = 250;
 // (2m51s): ...") as plain text in the pane, which then looks like the
 // notification took over the session.
 const OSC9_TERMS = ["xterm-ghostty", "ghostty", "xterm-kitty", "wezterm"];
+// Terms that do not name a terminal, only a pass-through that tmux or ssh put
+// in front of it. The real terminal's capabilities are unknown from here.
+const PASS_THROUGH_TERMS = ["xterm-256color", "screen", "screen-256color", "tmux", "tmux-256color", "linux", "vt100", "ansi"];
+// Terminals that render nothing they do not understand, so a sequence shown
+// there is printed as text.
+const TEXT_ONLY_TERMS = ["dumb", "unknown", "cons25"];
 
 export function supportsOsc9(term) {
   return OSC9_TERMS.includes(String(term || "").toLowerCase());
+}
+
+export function printsOsc9(term) {
+  const name = String(term || "").toLowerCase();
+  if (!name) return false;
+  if (TEXT_ONLY_TERMS.includes(name)) return true;
+  return !supportsOsc9(name) && !PASS_THROUGH_TERMS.includes(name);
 }
 
 export function config(env = process.env) {
@@ -291,20 +304,34 @@ export function passthrough(settings, raw) {
 // parser as they arrive, and a sequence split across two writes is parsed as
 // two broken ones, which leaves the payload printed as text. A soft reset
 // (DECSTR) first means a terminal that does print the body starts the
-// notification on a clean line.
+// notification on a clean line. A write that fails (tty already closed) must
+// not fail the whole script, so it always ends in `true`.
 export function writeScript(client, raw) {
-  return `printf %s ${shellQuote(`\x1b[!p${raw}`)} > ${shellQuote(client)}`;
+  return `printf %s ${shellQuote(`\x1b[!p${raw}`)} > ${shellQuote(client)}; true`;
+}
+
+export function spawnClient(bin, script) {
+  try {
+    spawn(bin, ["run-shell", "-b", script], { detached: true, stdio: "ignore" }).unref();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Deliver to every tmux client attached to the session running Crush, so the
 // notification lands in the terminal looking at that session. Detached via
-// run-shell -b so the turn is never held up. A terminal that would print the
-// sequence as text instead is skipped.
-export function enqueue(queueBin, raw, target, run = execFile, settings = {}) {
+// run-shell -b so the turn is never held up.
+//
+// The client TERM is not the terminal that receives the bytes: tmux and ssh
+// both report their own name (`xterm-256color`, `screen-256color`), so an
+// allowlist here skipped every client reached over the ssh hop this exists
+// for. Only a term that names a terminal without OSC 9 is skipped.
+export function enqueue(queueBin, raw, target, run = execFile, settings = {}, send = spawnClient) {
   if (!queueBin) return Promise.resolve(false);
   const formatted = passthrough(settings, raw);
   return new Promise((resolve) => {
-    run(queueBin, ["list-clients", "-F", "#{client_session}\t#{client_name}\t#{client_termname}"], { timeout: 2000 }, (err, stdout) => {
+    run(queueBin, ["list-clients", "-F", "#{client_session}\t#{client_name}\t#{client_termname}\t#{client_terminal_features}"], { timeout: 2000 }, (err, stdout) => {
       if (err) return resolve(false);
       const wanted = String(target).replace(/-\d+$/, "");
       const clients = String(stdout)
@@ -312,16 +339,13 @@ export function enqueue(queueBin, raw, target, run = execFile, settings = {}) {
         .filter((line) => line.includes("\t"))
         .map((line) => line.split("\t"))
         .filter(([name]) => name === target || name.replace(/-\d+$/, "") === wanted)
-        .filter(([, , term]) => supportsOsc9(term))
+        // A terminal can also advertise OSC 9 support for its term name.
+        .filter(([, , term, features = ""]) => features.includes("osc9") || !printsOsc9(term))
         .map(([, client]) => client);
       if (!clients.length) return resolve(false);
-      const script = clients.map((client) => writeScript(client, formatted)).join("; ");
-      try {
-        spawn(queueBin, ["run-shell", "-b", script], { detached: true, stdio: "ignore" }).unref();
-        resolve(true);
-      } catch {
-        resolve(false);
-      }
+      // One write per client: a dead tty can only fail its own write.
+      for (const client of clients) send(queueBin, writeScript(client, formatted));
+      resolve(true);
     });
   });
 }
@@ -332,7 +356,7 @@ export async function notify(settings, session, elapsed, payload, term, inTmux, 
   const text = osc9(`${TITLE} (${humanize(elapsed / 1000)})`, payload.last_assistant_message);
   const seconds = Math.round(elapsed / 1000);
   sweep(settings, now - elapsed - 1000, now + 2000);
-  if (!supportsOsc9(term)) {
+  if (printsOsc9(term)) {
     // Printing the sequence would dump the body into the pane as text, so the
     // only safe paths (stdout to the attached terminal, prompt spool) are off.
     log(settings, `skipped session=${session} elapsed=${seconds}s term=${term || "unset"} (no OSC 9)`);
