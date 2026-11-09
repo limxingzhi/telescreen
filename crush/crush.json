@@ -67,5 +67,21 @@
       "command": "bash-language-server",
       "args": ["start"]
     }
+  },
+  "hooks": {
+    "TurnStart": [
+      {
+        "name": "turn-notify-start",
+        "command": "/etc/crush/notify/turn-notify.js",
+        "timeout": 5
+      }
+    ],
+    "TurnEnd": [
+      {
+        "name": "turn-notify-end",
+        "command": "/etc/crush/notify/turn-notify.js",
+        "timeout": 5
+      }
+    ]
   }
 }

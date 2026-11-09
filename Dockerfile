@@ -116,6 +116,7 @@ COPY skills/ /etc/agents/skills/
 
 # Crush config + global instructions (outside /root so it survives bind mounts)
 COPY crush/ /etc/crush/
+RUN chmod +x /etc/crush/notify/*.js
 ENV CRUSH_GLOBAL_CONFIG=/etc/crush/crush.json
 
 # Shell config (outside /root so it survives bind mounts)

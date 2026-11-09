@@ -36,6 +36,19 @@ elif grep -q 'oh-my-zsh\.sh' "$ZSHRC"; then
   echo "migrated ~/.zshrc to the starship template (old one saved at ~/.zshrc.pre-starship)"
 fi
 
+# Pre-starship `.zshrc` copies predate the notification drain hook; add it once
+if grep -q 'starship init' "$ZSHRC" && ! grep -q 'precmd_crush_notify' "$ZSHRC"; then
+    cat >> "$ZSHRC" <<'DRAIN'
+
+# Long Crush turns spool an OSC 9 notification; replay it at the next prompt in
+# whichever pane you are looking at (tmux cannot inject escapes into a program)
+if [[ -o interactive && -z "${CRUSH_NOTIFY_NO_DRAIN:-}" ]]; then
+  precmd_crush_notify() { /etc/crush/notify/drain.js 2>/dev/null }
+  precmd_functions+=(precmd_crush_notify)
+fi
+DRAIN
+fi
+
 # Warn instead of silently falling back to a default prompt when starship or
 # its config is missing (e.g. a stale image or a volume masking /etc/starship)
 if ! command -v starship >/dev/null 2>&1; then
