@@ -29,7 +29,7 @@ function workspace(t) {
       spoolDir: path.join(root, "spool"),
       logFile: path.join(root, "log"),
       disableFlag: path.join(root, "disabled"),
-      threshold: 30,
+      threshold: 8,
     },
   };
 }
@@ -37,13 +37,15 @@ function workspace(t) {
 function harness(t, settings) {
   const clock = { now: 1_000_000 };
   const calls = [];
-  const runHook = async (event, { session = "s1", message = "done", inTmux = true } = {}) => {
+  const runHook = async (event, { session = "s1", message = "done", inTmux = true, term = "xterm-ghostty", paneInSession = true } = {}) => {
     const payload = { event, session_id: session };
     if (message !== null) payload.last_assistant_message = message;
     return hook.handle(JSON.stringify(payload), settings, {
       now: () => clock.now,
       parentPid: process.pid,
       inTmux: () => inTmux,
+      term,
+      paneOf: () => paneInSession,
       queueBin: "tmux",
       enqueueFn: async (...args) => {
         calls.push(args);
@@ -63,21 +65,21 @@ test("short turn is silent", async (t) => {
   const { settings } = workspace(t);
   const { clock, runHook, spooled } = harness(t, settings);
   await runHook("TurnStart");
-  clock.now += 10_000;
+  clock.now += 3_000;
   assert.strictEqual(await runHook("TurnEnd"), "");
   assert.deepStrictEqual(spooled(), []);
 });
 
-test("29.9s stays silent, 30s notifies", async (t) => {
+test("7.9s stays silent, 8s notifies", async (t) => {
   const { settings } = workspace(t);
   const { clock, runHook, spooled } = harness(t, settings);
   await runHook("TurnStart");
-  clock.now += 29_900;
+  clock.now += 7_900;
   assert.strictEqual(await runHook("TurnEnd"), "");
   assert.deepStrictEqual(spooled(), []);
   await runHook("TurnStart");
-  clock.now += 30_000;
-  assert.notStrictEqual(await runHook("TurnEnd"), "");
+  clock.now += 8_000;
+  await runHook("TurnEnd");
   assert.strictEqual(spooled().length, 1);
 });
 
@@ -234,22 +236,26 @@ test("passthrough wraps the sequence in DCS", () => {
 });
 
 test("writeScript targets the client tty", () => {
-  assert.strictEqual(hook.writeScript("/dev/pts/3", "\x1b]9;hi\x07"), "printf %s '\x1b]9;hi\x07' > '/dev/pts/3'");
+  assert.strictEqual(
+    hook.writeScript("/dev/pts/3", "\x1b]9;hi\x07"),
+    "printf %s '\x1b[!p\x1b]9;hi\x07' > '/dev/pts/3'",
+  );
 });
 
 test("enqueue writes to every client of the session", async () => {
   const seen = [];
   const run = (bin, args, opts, cb) => {
     seen.push([bin, ...args]);
-    cb(null, "work\t/dev/pts/2\nother\t/dev/pts/9\nwork-2\t/dev/pts/5\n");
+    cb(null, "work\t/dev/pts/2\txterm-ghostty\nother\t/dev/pts/9\twezterm\nwork-2\t/dev/pts/5\twezterm\n");
   };
   const ok = await hook.enqueue("tmux", "\x1b]9;hi\x07", "work", run, { passthrough: true });
   assert.strictEqual(ok, true);
-  assert.deepStrictEqual(seen[0], ["tmux", "list-clients", "-F", "#{client_session}\t#{client_name}"]);
+  assert.strictEqual(seen.length, 1);
+  assert.deepStrictEqual(seen[0], ["tmux", "list-clients", "-F", "#{client_session}\t#{client_name}\t#{client_termname}"]);
 });
 
 test("enqueue gives up when no client matches", async () => {
-  const run = (bin, args, opts, cb) => cb(null, "other\t/dev/pts/9\n");
+  const run = (bin, args, opts, cb) => cb(null, "other\t/dev/pts/9\txterm-ghostty\n");
   assert.strictEqual(await hook.enqueue("tmux", "x", "work", run), false);
 });
 
@@ -260,11 +266,92 @@ test("drain replays and removes", (t) => {
   fs.writeFileSync(path.join(settings.spoolDir, "2.osc"), "\x1b]9;two\x07");
   const chunks = [];
   const out = { isTTY: true, write: (s) => chunks.push(s) };
-  assert.strictEqual(drain.drain(settings.spoolDir, out), 2);
+  assert.strictEqual(drain.drain(settings.spoolDir, out, Date.now(), "xterm-ghostty"), 2);
   assert.strictEqual(chunks.join(""), "\x1b]9;one\x07\x1b]9;two\x07");
   assert.deepStrictEqual(fs.readdirSync(settings.spoolDir), []);
 });
 
+test("drain leaves the spool alone for a terminal without OSC 9", (t) => {
+  const { settings } = workspace(t);
+  fs.mkdirSync(settings.spoolDir, { recursive: true });
+  fs.writeFileSync(path.join(settings.spoolDir, "1.osc"), "\x1b]9;one\x07");
+  const chunks = [];
+  const out = { isTTY: true, write: (s) => chunks.push(s) };
+  assert.strictEqual(drain.drain(settings.spoolDir, out, Date.now(), "xterm-256color"), 0);
+  assert.deepStrictEqual(chunks, []);
+  assert.strictEqual(fs.readdirSync(settings.spoolDir).length, 1);
+});
+
+test("supportsOsc9 recognises notifying terminals only", () => {
+  for (const term of ["xterm-ghostty", "ghostty", "xterm-kitty", "wezterm"]) {
+    assert.strictEqual(hook.supportsOsc9(term), true, term);
+  }
+  for (const term of ["xterm-256color", "screen", "tmux-256color", "dumb", "", undefined]) {
+    assert.strictEqual(hook.supportsOsc9(term), false, String(term));
+  }
+});
+
+test("terminal without OSC 9 notifies nowhere", async (t) => {
+  const { settings } = workspace(t);
+  const { clock, runHook, spooled, calls } = harness(t, settings);
+  await runHook("TurnStart");
+  clock.now += 60_000;
+  assert.strictEqual(await runHook("TurnEnd", { term: "xterm-256color" }), "");
+  assert.deepStrictEqual(spooled(), []);
+  assert.deepStrictEqual(calls, []);
+});
+
+test("a terminal showing another pane only gets the spool", async (t) => {
+  const { settings } = workspace(t);
+  const { clock, runHook, spooled, calls } = harness(t, settings);
+  await runHook("TurnStart");
+  clock.now += 60_000;
+  const text = await runHook("TurnEnd", { paneInSession: false });
+  assert.strictEqual(text, "");
+  assert.strictEqual(spooled().length, 1);
+  assert.deepStrictEqual(calls, []);
+});
+
+test("enqueue skips clients that would print the sequence", async () => {
+  let calls = 0;
+  const run = (bin, args, opts, cb) => {
+    calls += 1;
+    cb(null, "work\t/dev/pts/2\txterm-256color\nwork\t/dev/pts/5\txterm-ghostty\n");
+  };
+  assert.strictEqual(await hook.enqueue("tmux", "\x1b]9;hi\x07", "work", run), true);
+  assert.strictEqual(calls, 1);
+});
+
+test("enqueue gives up when every client lacks OSC 9", async () => {
+  const run = (bin, args, opts, cb) => cb(null, "work\t/dev/pts/2\txterm-256color\n");
+  assert.strictEqual(await hook.enqueue("tmux", "x", "work", run), false);
+});
+
+test("sweep drops only files stamped inside the window", async (t) => {
+  const { settings } = workspace(t);
+  fs.mkdirSync(settings.spoolDir, { recursive: true });
+  const stale = "1794000001000.osc";
+  const inside = "1794000006000.osc";
+  const late = "1794000009000.osc";
+  for (const name of [stale, inside, late]) {
+    fs.writeFileSync(path.join(settings.spoolDir, name), "x");
+  }
+  fs.writeFileSync(path.join(settings.spoolDir, "notes.txt"), "keep");
+  assert.strictEqual(hook.sweep(settings, 1_794_000_005_000, 1_794_000_008_000), 1);
+  assert.deepStrictEqual(fs.readdirSync(settings.spoolDir).sort(), [stale, late, "notes.txt"].sort());
+});
+test("SessionEnd drops what the run left in the spool", async (t) => {
+  const { settings } = workspace(t);
+  const { clock, runHook } = harness(t, settings);
+  await runHook("TurnStart");
+  await runHook("TurnEnd", { inTmux: false });
+  fs.mkdirSync(settings.spoolDir, { recursive: true });
+  fs.writeFileSync(path.join(settings.spoolDir, `${clock.now}.osc`), "at-start");
+  fs.writeFileSync(path.join(settings.spoolDir, `${clock.now + 1}.osc`), "during");
+  fs.writeFileSync(path.join(settings.spoolDir, "notes.txt"), "keep");
+  await runHook("SessionEnd", { inTmux: false });
+  assert.deepStrictEqual(fs.readdirSync(settings.spoolDir), ["notes.txt"]);
+});
 test("drain is silent on a pipe", (t) => {
   const { settings } = workspace(t);
   fs.mkdirSync(settings.spoolDir, { recursive: true });

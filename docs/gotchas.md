@@ -40,6 +40,13 @@ Things that cost time once and will cost it again.
 - `STARSHIP_VERSION` is pinned in the `Dockerfile`; starship ships static musl
   tarballs, so both architectures install the same way.
 - The Neovim Gist URL is hardcoded in `entrypoint.sh`.
+- `releases/download/...` URLs intermittently answer `504` from GitHub's CDN
+  and are rate-limited anonymously. CI passes its job token to the build as the
+  `github_token` BuildKit secret (locally:
+  `docker buildx build --secret id=github_token,env=GITHUB_TOKEN`); each
+  download step mounts it and sends `Authorization: Bearer <token>`, falling
+  back to an unauthenticated request when the secret is absent. Every download
+  also uses `--retry 5 --retry-all-errors`.
 
 ## Crush notifications
 
@@ -53,3 +60,12 @@ Details in [long-turn-notifications.md](long-turn-notifications.md).
   stale start record is cleaned up by the next run.
 - OSC 9 is a desktop notification in Ghostty, kitty and WezTerm; Terminal.app
   and iTerm2 ignore it.
+- Terminals that do not decode OSC 9 do not swallow it either: the xterm
+  sequence parser prints the body (`Crush finished (2m51s): <message>`) as
+  plain text in the pane and only repaints over it at the next prompt, which
+  looks like the notification took over the session. That is why the hook gates
+  on `TERM` (`supportsOsc9`) instead of firing everywhere and hoping.
+- The `options.notifications` value in `crush.json` is Crush's own and has no
+  effect on this hook; the hook never reads it. Mute with
+  `touch ~/.local/state/crush-notify/disabled` or `CRUSH_NOTIFY_NO_DRAIN=1`, or
+  read what was skipped in `~/.local/state/crush-notify/hook.log`.

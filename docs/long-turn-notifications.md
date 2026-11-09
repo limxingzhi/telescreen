@@ -100,6 +100,26 @@ smuggle a second escape sequence into your terminal.
 | spool file | `~/.local/state/crush-notify/spool/*.osc`; `drain.js` replays them as a zsh `precmd` hook | the pane you are actually looking at |
 | tmux client tty | `tmux run-shell -b` writes the bytes to the tty of every client attached to the Crush session | terminal is focused on another pane or session |
 
+### Only notifying terminals get the sequence
+
+`supportsOsc9()` gates the whole thing on `TERM` being `xterm-ghostty`,
+`ghostty`, `xterm-kitty`, or `wezterm`. Every other terminal, and every tmux
+client tty whose `TERM` is not on that list (plain `xterm-256color` over SSH,
+say), is skipped: the hook logs `skipped ... (no OSC 9)` and returns nothing.
+Terminals do not ignore an OSC 9 they do not understand, they print the body as
+plain text, which is what makes a notification look like it took over the
+session.
+
+Two guards keep the printed copy away from panes that would show it as text:
+
+- inside tmux the hook returns an empty string for stdout, because Crush prints
+  hook stdout into whatever pane is open;
+- if `list-panes` shows the client is not looking at the pane Crush runs in
+  (`TMUX_PANE`), the hook skips both stdout and the client-tty write and leaves
+  the notification to the spool replay, which only an idle prompt picks up.
+
+`drain.js` applies the same `TERM` gate before replaying anything.
+
 ### Why the tmux path is wrapped in passthrough
 
 tmux only forwards escape sequences it recognizes, and OSC 9 is not one of
@@ -119,7 +139,13 @@ every delivery path: failures are logged and it still exits 0.
 The prompt drain exists because only the shell can print an escape sequence
 into its own pane; tmux cannot inject one into a program it is not running.
 
-Spool files are pruned after 12 hours and capped at 32, oldest dropped first.
+Spool files are named by the `Date.now()` millisecond they were written and
+capped at 32, oldest dropped first. `sweep()` drops the ones stamped inside a
+finished run's window (inclusive, compared as zero-padded strings so no float
+or BigInt rounding is involved), so a notification from a previous `crush`
+that exited without a prompt never surfaces later. Files older than 12 hours
+are pruned as well, and the `SessionEnd` hook runs the sweep when a session
+closes.
 
 ## Controls
 

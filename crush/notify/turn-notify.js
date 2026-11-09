@@ -23,6 +23,16 @@ const SPOOL_TTL_MS = 12 * 3600 * 1000;
 export const SPOOL_CAP = 32;
 const SAMPLE_MS = 250;
 
+// Terminals that decode OSC 9 into a desktop notification. Anywhere else the
+// sequence is not ignored: the xterm parser prints the body ("Crush finished
+// (2m51s): ...") as plain text in the pane, which then looks like the
+// notification took over the session.
+const OSC9_TERMS = ["xterm-ghostty", "ghostty", "xterm-kitty", "wezterm"];
+
+export function supportsOsc9(term) {
+  return OSC9_TERMS.includes(String(term || "").toLowerCase());
+}
+
 export function config(env = process.env) {
   const dir = path.join(env.XDG_STATE_HOME || path.join(os.homedir(), ".local/state"), "crush-notify");
   return {
@@ -72,6 +82,19 @@ export function osc9(title, body = "") {
 
 // --- turn clock ------------------------------------------------------------
 
+export function cpuTicks(pid) {
+  const fields = statFields(pid);
+  // After the command name, state is index 0 and utime is index 11.
+  return [11, 12, 13, 14].reduce((sum, i) => sum + Number(fields[i]), 0);
+}
+
+// Fields of /proc/<pid>/stat after the executable name, which may itself hold
+// spaces and parentheses.
+function statFields(pid) {
+  const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
+  return stat.slice(stat.lastIndexOf(")") + 2).split(" ");
+}
+
 function alive(pid) {
   try {
     process.kill(pid, 0);
@@ -79,17 +102,6 @@ function alive(pid) {
   } catch (err) {
     return err.code === "EPERM";
   }
-}
-
-function statFields(pid) {
-  const raw = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
-  return raw.slice(raw.lastIndexOf(")") + 2).split(" ");
-}
-
-export function cpuTicks(pid) {
-  const fields = statFields(pid);
-  // After the command name, state is index 0 and utime is index 11.
-  return [11, 12, 13, 14].reduce((sum, i) => sum + Number(fields[i]), 0);
 }
 
 export function descendants(root) {
@@ -142,7 +154,7 @@ export async function procIdle(root, sampleMs = SAMPLE_MS) {
 
 // Returns how long the current turn has been running and stores `now` as the
 // start of the next one.
-export async function measure(settings, session, parentPid, now) {
+export async function measure(settings, session, parentPid, now, run = now) {
   const file = path.join(settings.stateDir, `${session || "default"}.json`);
   let previous = null;
   try {
@@ -165,7 +177,7 @@ export async function measure(settings, session, parentPid, now) {
     }
   }
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify({ pid: parentPid, since: now }));
+  fs.writeFileSync(file, JSON.stringify({ pid: parentPid, since: now, run }));
   return start === null ? 0 : Math.max(0, now - start);
 }
 
@@ -188,6 +200,37 @@ export function pruneSpool(settings, now) {
   }
 }
 
+// Spool file names are `Date.now()` in milliseconds. The window is inclusive
+// and compared as zero-padded strings: equal length, so lexicographic order is
+// numeric order, and it sidesteps BigInt entirely. Only stamps inside the run's
+// window are dropped, so a cleaner for another run never touches its files.
+export function sweep(settings, from, to) {
+  if (!(to > from)) return 0;
+  const width = String(Math.trunc(to)).length;
+  const pad = (ms) => String(Math.trunc(ms)).padStart(width, "0");
+  const low = pad(from);
+  const high = pad(to);
+  let names;
+  try {
+    names = fs.readdirSync(settings.spoolDir);
+  } catch {
+    return 0;
+  }
+  let dropped = 0;
+  for (const name of names) {
+    if (!/^\d+\.osc$/.test(name)) continue;
+    const born = name.slice(0, -4).padStart(width, "0");
+    if (born < low || born > high) continue;
+    try {
+      fs.unlinkSync(path.join(settings.spoolDir, name));
+      dropped += 1;
+    } catch {
+      // raced with the drain
+    }
+  }
+  return dropped;
+}
+
 export function spool(settings, payload) {
   fs.mkdirSync(settings.spoolDir, { recursive: true });
   const names = fs.readdirSync(settings.spoolDir).filter((n) => n.endsWith(".osc")).sort();
@@ -198,7 +241,7 @@ export function spool(settings, payload) {
       // already gone
     }
   }
-  fs.writeFileSync(path.join(settings.spoolDir, `${Date.now() * 1e6}.osc`), payload);
+  fs.writeFileSync(path.join(settings.spoolDir, `${Date.now()}.osc`), payload);
 }
 
 function shellQuote(value) {
@@ -219,6 +262,21 @@ export function findPane(listing, target) {
   return ["", ""];
 }
 
+// Only the pane Crush is running in prints the notification as text. A user
+// who has moved on to a different pane has no shell of ours waiting at a
+// prompt, so the spool replay is the path that reaches them.
+export function inPane(listing, target) {
+  const pane = String(process.env.TMUX_PANE || "");
+  if (!pane) return true;
+  const wanted = target.replace(/-\d+$/, "");
+  const rows = listing.split("\n").filter((line) => line.includes("\t"));
+  for (const row of rows) {
+    const [name, paneId] = row.split("\t");
+    if ((name === target || name.replace(/-\d+$/, "") === wanted) && paneId === pane) return true;
+  }
+  return false;
+}
+
 // tmux only forwards escape sequences it knows about, so an OSC 9 written
 // into a pane is swallowed. Wrapping it in DCS passthrough makes tmux hand the
 // bytes to the terminal verbatim, which needs `allow-passthrough on`. Writing
@@ -229,18 +287,24 @@ export function passthrough(settings, raw) {
   return raw;
 }
 
+// A single write per client: tmux hands passthrough bytes to the terminal
+// parser as they arrive, and a sequence split across two writes is parsed as
+// two broken ones, which leaves the payload printed as text. A soft reset
+// (DECSTR) first means a terminal that does print the body starts the
+// notification on a clean line.
 export function writeScript(client, raw) {
-  return `printf %s ${shellQuote(raw)} > ${shellQuote(client)}`;
+  return `printf %s ${shellQuote(`\x1b[!p${raw}`)} > ${shellQuote(client)}`;
 }
 
 // Deliver to every tmux client attached to the session running Crush, so the
 // notification lands in the terminal looking at that session. Detached via
-// run-shell -b so the turn is never held up.
+// run-shell -b so the turn is never held up. A terminal that would print the
+// sequence as text instead is skipped.
 export function enqueue(queueBin, raw, target, run = execFile, settings = {}) {
   if (!queueBin) return Promise.resolve(false);
   const formatted = passthrough(settings, raw);
   return new Promise((resolve) => {
-    run(queueBin, ["list-clients", "-F", "#{client_session}\t#{client_name}"], { timeout: 2000 }, (err, stdout) => {
+    run(queueBin, ["list-clients", "-F", "#{client_session}\t#{client_name}\t#{client_termname}"], { timeout: 2000 }, (err, stdout) => {
       if (err) return resolve(false);
       const wanted = String(target).replace(/-\d+$/, "");
       const clients = String(stdout)
@@ -248,6 +312,7 @@ export function enqueue(queueBin, raw, target, run = execFile, settings = {}) {
         .filter((line) => line.includes("\t"))
         .map((line) => line.split("\t"))
         .filter(([name]) => name === target || name.replace(/-\d+$/, "") === wanted)
+        .filter(([, , term]) => supportsOsc9(term))
         .map(([, client]) => client);
       if (!clients.length) return resolve(false);
       const script = clients.map((client) => writeScript(client, formatted)).join("; ");
@@ -263,12 +328,21 @@ export function enqueue(queueBin, raw, target, run = execFile, settings = {}) {
 
 // --- hook entry ------------------------------------------------------------
 
-export async function notify(settings, session, elapsed, payload, inTmux, queueBin, enqueueFn) {
+export async function notify(settings, session, elapsed, payload, term, inTmux, queueBin, enqueueFn, now = Date.now(), samePane = true) {
   const text = osc9(`${TITLE} (${humanize(elapsed / 1000)})`, payload.last_assistant_message);
+  const seconds = Math.round(elapsed / 1000);
+  sweep(settings, now - elapsed - 1000, now + 2000);
+  if (!supportsOsc9(term)) {
+    // Printing the sequence would dump the body into the pane as text, so the
+    // only safe paths (stdout to the attached terminal, prompt spool) are off.
+    log(settings, `skipped session=${session} elapsed=${seconds}s term=${term || "unset"} (no OSC 9)`);
+    return "";
+  }
   spool(settings, text);
   if (inTmux()) await enqueueFn(queueBin, text, session, undefined, settings);
-  log(settings, `notified session=${session} elapsed=${Math.round(elapsed / 1000)}s`);
-  return text;
+  log(settings, `notified session=${session} elapsed=${seconds}s`);
+  // Crush prints hook stdout, and that copy lands in whatever pane is open.
+  return inTmux() || !samePane ? "" : text;
 }
 
 export async function handle(raw, settings, opts = {}) {
@@ -278,6 +352,8 @@ export async function handle(raw, settings, opts = {}) {
     inTmux = () => Boolean(process.env.TMUX),
     queueBin: bin = null,
     enqueueFn = enqueue,
+    term = process.env.TERM,
+    paneOf = inPane,
   } = opts;
   const queueBin = bin || tmuxBinary();
 
@@ -292,7 +368,11 @@ export async function handle(raw, settings, opts = {}) {
   const at = now();
 
   if (event === "TurnStart") {
-    await measure(settings, session, parentPid, at);
+    await measure(settings, session, parentPid, at, at);
+    return "";
+  }
+  if (event === "SessionEnd") {
+    endSession(settings, session, at);
     return "";
   }
   if (event !== "TurnEnd") return "";
@@ -301,7 +381,28 @@ export async function handle(raw, settings, opts = {}) {
   const elapsed = await measure(settings, session, parentPid, at);
   const threshold = Number(settings.threshold) || 30;
   if (Number(elapsed) < threshold * 1000) return "";
-  return notify(settings, session, elapsed, payload, inTmux, queueBin, enqueueFn);
+  const panned = inTmux() && !paneOf(await listPanes(queueBin), session);
+  // Only the spool replay can land with the terminal showing another pane.
+  const deliver = panned ? () => Promise.resolve(false) : enqueueFn;
+  return notify(settings, session, elapsed, payload, term, inTmux, queueBin, deliver, at, !panned);
+}
+
+export function endSession(settings, session, now = Date.now()) {
+  const file = path.join(settings.stateDir, `${session || "default"}.json`);
+  let run = null;
+  try {
+    run = JSON.parse(fs.readFileSync(file, "utf8")).run;
+  } catch {
+    run = null;
+  }
+  // A zero-width window would sweep nothing, so a run that starts and ends in
+  // the same millisecond still looks at the spool.
+  if (typeof run === "number") sweep(settings, run, Math.max(now, run + 1));
+  try {
+    fs.unlinkSync(file);
+  } catch {
+    // never written
+  }
 }
 
 export function tmuxBinary() {
@@ -315,6 +416,17 @@ export function tmuxBinary() {
     }
   }
   return null;
+}
+
+// Panes of the session running Crush, as "session\tpane-id" rows. Used to tell
+// whether the terminal is still looking at the pane Crush lives in.
+export function listPanes(queueBin, run = execFile) {
+  if (!queueBin) return Promise.resolve("");
+  return new Promise((resolve) => {
+    run(queueBin, ["list-panes", "-a", "-F", "#{session_name}\t#{pane_id}"], { timeout: 2000 }, (err, stdout) => {
+      resolve(err ? "" : String(stdout));
+    });
+  });
 }
 
 export async function main(stdin = process.stdin) {

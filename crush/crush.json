@@ -82,6 +82,13 @@
         "command": "/etc/crush/notify/turn-notify.js",
         "timeout": 5
       }
+    ],
+    "SessionEnd": [
+      {
+        "name": "session-notify-cleanup",
+        "command": "/etc/crush/notify/turn-notify.js",
+        "timeout": 5
+      }
     ]
   }
 }

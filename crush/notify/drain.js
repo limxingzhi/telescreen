@@ -9,12 +9,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { config } from "./turn-notify.js";
+import { config, supportsOsc9 } from "./turn-notify.js";
 
 const SPOOL_TTL_MS = 12 * 3600 * 1000;
 
-export function drain(spoolDir, out = process.stdout, now = Date.now()) {
-  if (!out.isTTY) return 0;
+export function drain(spoolDir, out = process.stdout, now = Date.now(), term = process.env.TERM) {
+  // A terminal without OSC 9 support prints the payload as text (see
+  // supportsOsc9), which is the takeover this drain is meant to avoid.
+  if (!out.isTTY || !supportsOsc9(term)) return 0;
   let entries;
   try {
     entries = fs.readdirSync(spoolDir).filter((name) => name.endsWith(".osc")).sort();
