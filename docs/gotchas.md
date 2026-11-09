@@ -45,6 +45,19 @@ Things that cost time once and will cost it again.
   every download uses `--retry 5 --retry-all-errors` (Neovim also sets
   `--retry-delay 5`) to ride out transient failures.
 
+## Crush session titles
+
+- Crush titles a session with a small-model call budgeted for 40 tokens, but
+  reasoning models spend those tokens on hidden reasoning and return empty
+  text. The retry with the large model fails the same way, both attempts log
+  `Title generation hit token limit`, and the session stays `Untitled Session`.
+  No config key changes the budget.
+- The way out is to set `can_reason: true` on the provider model in
+  `crush.json`; Crush then uses the model's `default_max_tokens` for title
+  generation instead of 40. Both DeepSeek models carry the flag for this
+  reason. Verify a fresh session is titled and `logs/crush.log` has no
+  `hit token limit` lines.
+
 ## Crush notifications
 
 Details in [long-turn-notifications.md](long-turn-notifications.md).
