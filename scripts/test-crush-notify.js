@@ -143,7 +143,8 @@ test("tmux delivery targets the session", async (t) => {
   await runHook("TurnStart");
   clock.now += 100_000;
   await runHook("TurnEnd", { session: "other" });
-  assert.deepStrictEqual(calls, [["tmux", spooled()[0], "crush-work"]]);
+  assert.strictEqual(calls.length, 1);
+  assert.deepStrictEqual(calls[0].slice(0, 3), ["tmux", spooled()[0], "crush-work"]);
 });
 
 test("no tmux still spools", async (t) => {
@@ -226,11 +227,30 @@ test("humanize", () => {
   assert.strictEqual(hook.humanize(3725), "1h02m");
 });
 
-test("findPane matches then falls back", () => {
-  const listing = "work\t%1\ncrush-main\t%2\n";
-  assert.deepStrictEqual(hook.findPane(listing, "work"), ["%1", "work"]);
-  assert.deepStrictEqual(hook.findPane(listing, "crush-main-2"), ["%2", "crush-main"]);
-  assert.deepStrictEqual(hook.findPane(listing, "unknown"), ["%2", "crush-main"]);
+test("passthrough wraps the sequence in DCS", () => {
+  const raw = "\x1b]9;hi\x07";
+  assert.strictEqual(hook.passthrough({ passthrough: true }, raw), "\x1bPtmux;\x1b\x1b\x1b]9;hi\x07\x1b\\");
+  assert.strictEqual(hook.passthrough({ passthrough: false }, raw), raw);
+});
+
+test("writeScript targets the client tty", () => {
+  assert.strictEqual(hook.writeScript("/dev/pts/3", "\x1b]9;hi\x07"), "printf %s '\x1b]9;hi\x07' > '/dev/pts/3'");
+});
+
+test("enqueue writes to every client of the session", async () => {
+  const seen = [];
+  const run = (bin, args, opts, cb) => {
+    seen.push([bin, ...args]);
+    cb(null, "work\t/dev/pts/2\nother\t/dev/pts/9\nwork-2\t/dev/pts/5\n");
+  };
+  const ok = await hook.enqueue("tmux", "\x1b]9;hi\x07", "work", run, { passthrough: true });
+  assert.strictEqual(ok, true);
+  assert.deepStrictEqual(seen[0], ["tmux", "list-clients", "-F", "#{client_session}\t#{client_name}"]);
+});
+
+test("enqueue gives up when no client matches", async () => {
+  const run = (bin, args, opts, cb) => cb(null, "other\t/dev/pts/9\n");
+  assert.strictEqual(await hook.enqueue("tmux", "x", "work", run), false);
 });
 
 test("drain replays and removes", (t) => {

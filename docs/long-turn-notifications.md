@@ -98,13 +98,26 @@ smuggle a second escape sequence into your terminal.
 |------|-----------|--------|
 | stdout | Crush writes hook stdout to the terminal | attached terminal outside tmux |
 | spool file | `~/.local/state/crush-notify/spool/*.osc`; `drain.js` replays them as a zsh `precmd` hook | the pane you are actually looking at |
-| tmux pane tty | `tmux run-shell -b` with `send-keys -H` (hex bytes) into the pane running Crush | you are in another pane or session |
+| tmux client tty | `tmux run-shell -b` writes the bytes to the tty of every client attached to the Crush session | terminal is focused on another pane or session |
+
+### Why the tmux path is wrapped in passthrough
+
+tmux only forwards escape sequences it recognizes, and OSC 9 is not one of
+them: a sequence written into a pane, or via `send-keys`, is swallowed before
+it reaches the terminal. Wrapping the sequence in DCS passthrough
+(`ESC Ptmux; ESC <sequence> ESC \`) makes tmux hand the bytes to the terminal
+verbatim. That requires `allow-passthrough on`, which `tmux/tmux.conf` sets;
+`entrypoint.sh` also adds it to `~/.tmux.conf` copies that predate it. Set
+`CRUSH_NOTIFY_PASSTHROUGH=0` to send the sequence unwrapped.
+
+The bytes go to the *client* tty, resolved with `list-clients`, rather than
+into the pane. `send-keys` writes into the pane's input stream, where the bytes
+land in the shell's buffer and mangle whatever you were typing. `run-shell -b`
+detaches the write so a turn is never held up, and the hook gives up quickly on
+every delivery path: failures are logged and it still exits 0.
 
 The prompt drain exists because only the shell can print an escape sequence
 into its own pane; tmux cannot inject one into a program it is not running.
-`send-keys -H` passes raw bytes rather than typed text, and `run-shell -b`
-detaches it so a turn is never held up. The hook gives up quickly on every
-delivery path: failures are logged and it still exits 0.
 
 Spool files are pruned after 12 hours and capped at 32, oldest dropped first.
 
@@ -116,6 +129,7 @@ Spool files are pruned after 12 hours and capped at 32, oldest dropped first.
 | Mute | `touch ~/.local/state/crush-notify/disabled` |
 | Log | `~/.local/state/crush-notify/hook.log` |
 | Disable the prompt drain | `CRUSH_NOTIFY_NO_DRAIN=1` |
+| Send the sequence unwrapped | `CRUSH_NOTIFY_PASSTHROUGH=0` |
 
 Terminal support: kitty and WezTerm read OSC 9; macOS Terminal.app and iTerm2 do
 not. The sequence is harmless in terminals that ignore it. As a fallback on the

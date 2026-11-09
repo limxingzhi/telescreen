@@ -31,6 +31,7 @@ export function config(env = process.env) {
     logFile: path.join(dir, "hook.log"),
     disableFlag: path.join(dir, "disabled"),
     threshold: Number(env.CRUSH_NOTIFY_THRESHOLD || 30),
+    passthrough: env.CRUSH_NOTIFY_PASSTHROUGH !== "0",
   };
 }
 
@@ -67,10 +68,6 @@ export function osc9(title, body = "") {
   let payload = sanitize(title);
   if (body) payload += `: ${sanitize(body)}`;
   return `\x1b]9;${payload}\x07`;
-}
-
-export function hexBytes(raw) {
-  return [...Buffer.from(raw, "utf8")].map((b) => b.toString(16).padStart(2, "0")).join(" ");
 }
 
 // --- turn clock ------------------------------------------------------------
@@ -222,23 +219,38 @@ export function findPane(listing, target) {
   return ["", ""];
 }
 
-// Write the OSC bytes to the pane tty of the session running Crush.
-// send-keys -H writes to the pane's tty (the client, when the pane runs a
-// terminal program); display-message leaves the same bytes on the status
-// line. Detached via run-shell -b so the turn is never held up.
-export function enqueue(queueBin, raw, target, run = execFile) {
+// tmux only forwards escape sequences it knows about, so an OSC 9 written
+// into a pane is swallowed. Wrapping it in DCS passthrough makes tmux hand the
+// bytes to the terminal verbatim, which needs `allow-passthrough on`. Writing
+// to the attached client's tty keeps the sequence away from the shell's input
+// buffer, where send-keys would have mixed it with whatever you were typing.
+export function passthrough(settings, raw) {
+  if (settings.passthrough) return `\x1bPtmux;\x1b${raw.replaceAll("\x1b", "\x1b\x1b")}\x1b\\`;
+  return raw;
+}
+
+export function writeScript(client, raw) {
+  return `printf %s ${shellQuote(raw)} > ${shellQuote(client)}`;
+}
+
+// Deliver to every tmux client attached to the session running Crush, so the
+// notification lands in the terminal looking at that session. Detached via
+// run-shell -b so the turn is never held up.
+export function enqueue(queueBin, raw, target, run = execFile, settings = {}) {
   if (!queueBin) return Promise.resolve(false);
+  const formatted = passthrough(settings, raw);
   return new Promise((resolve) => {
-    run(queueBin, ["list-panes", "-a", "-F", "#{session_name}\t#{pane_id}"], { timeout: 2000 }, (err, stdout) => {
+    run(queueBin, ["list-clients", "-F", "#{client_session}\t#{client_name}"], { timeout: 2000 }, (err, stdout) => {
       if (err) return resolve(false);
-      const [pane, name] = findPane(String(stdout), target);
-      const where = pane || name || target || "crush";
-      const script = [
-        [queueBin, "send-keys", "-H", "-t", where, ...hexBytes(raw).split(" ")],
-        [queueBin, "display-message", "-t", where, "-d", "5000", raw],
-      ]
-        .map((args) => args.map(shellQuote).join(" "))
-        .join("; ");
+      const wanted = String(target).replace(/-\d+$/, "");
+      const clients = String(stdout)
+        .split("\n")
+        .filter((line) => line.includes("\t"))
+        .map((line) => line.split("\t"))
+        .filter(([name]) => name === target || name.replace(/-\d+$/, "") === wanted)
+        .map(([, client]) => client);
+      if (!clients.length) return resolve(false);
+      const script = clients.map((client) => writeScript(client, formatted)).join("; ");
       try {
         spawn(queueBin, ["run-shell", "-b", script], { detached: true, stdio: "ignore" }).unref();
         resolve(true);
@@ -254,7 +266,7 @@ export function enqueue(queueBin, raw, target, run = execFile) {
 export async function notify(settings, session, elapsed, payload, inTmux, queueBin, enqueueFn) {
   const text = osc9(`${TITLE} (${humanize(elapsed / 1000)})`, payload.last_assistant_message);
   spool(settings, text);
-  if (inTmux()) await enqueueFn(queueBin, text, session);
+  if (inTmux()) await enqueueFn(queueBin, text, session, undefined, settings);
   log(settings, `notified session=${session} elapsed=${Math.round(elapsed / 1000)}s`);
   return text;
 }

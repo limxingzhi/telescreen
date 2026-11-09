@@ -60,6 +60,9 @@ fi
 # Link tmux config if not present
 if [ ! -f "$TMUX_CONFIG" ]; then
     ln -s /etc/tmux/tmux.conf "$TMUX_CONFIG"
+# Older config copies predate the passthrough setting the notification hook needs
+elif ! grep -q 'allow-passthrough' "$TMUX_CONFIG" 2>/dev/null; then
+    printf '\n# Let the Crush notification hook write OSC 9 to the terminal\nset -g allow-passthrough on\n' >> "$TMUX_CONFIG"
 fi
 
 # Copy tmux plugins if not present

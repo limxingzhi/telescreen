@@ -23,6 +23,11 @@ Things that cost time once and will cost it again.
   `set-clipboard`. Terminals without OSC 52 support get nothing.
 - tmux plugins are pre-installed at build time (TPM + tmux-yank) and linked on
   first start.
+- tmux drops escape sequences it does not recognize (OSC 9 among them). Anything
+  written into a pane or sent with `send-keys` never reaches the terminal
+  unless `allow-passthrough on` is set and the sequence is wrapped in
+  DCS passthrough. `display-message` banners are also unreliable for this: they
+  render in some setups and silently vanish in others.
 - Scratch sessions (`scratch-*`) are persistent: closing the popup does not kill
   them.
 
