@@ -108,6 +108,20 @@ docker run -it --rm -v dev-env-home:/root -e ZAI_API_KEY=your-key dev-env
 
 Then just run `crush` and start chatting.
 
+### Long-turn notifications
+
+Crush hooks in `/etc/crush/crush.json` watch `TurnStart`/`TurnEnd`. When a turn runs for 30 seconds or longer, `crush/notify/turn-notify.js` fires a desktop notification through OSC 9 (`ESC ] 9 ; message BEL`), which Ghostty renders natively as a Ghostty notification. The same sequence is pushed into the tmux session running Crush, so it also shows on the tmux status line, and the terminal running Ghostty sees it even when another pane is focused.
+
+- Time is measured from `TurnStart`, so permission prompts are included. Time spent waiting for you to type is not.
+- The hook writes the sequence to its own stdout, spools it under `~/.local/state/crush-notify/`, and writes it to the Crush pane's tty. On the next prompt in any shell, `drain.js` replays anything spooled for a pane you were not looking at.
+- `touch ~/.local/state/crush-notify/disabled` silences it; the hook log lives next to it.
+- Tune the threshold with `CRUSH_NOTIFY_THRESHOLD` (seconds) in `~/start.sh`.
+- If your Ghostty setup needs it, Ghostty itself can also fire on command finish: set `notify-on-command-finish = always` or `unfocused` in the Ghostty config on the client machine.
+
+Other terminals: kitty and WezTerm read OSC 9; macOS Terminal.app and iTerm2 do not. The OSC sequence is harmless to terminals that ignore it.
+
+How the turn clock, the pid check, and the three delivery paths work: [docs/long-turn-notifications.md](docs/long-turn-notifications.md).
+
 ## Neovim config
 
 On first start, the container fetches a config from a [GitHub Gist](https://gist.github.com/limxingzhi/fa3be5045caded9d4e09f2423dbfcec7). If the fetch fails, it falls back to a minimal default. Mount your own to override:

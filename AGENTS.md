@@ -1,87 +1,47 @@
 # AGENTS.md
 
-## Overview
+Docker dev environment on `node:26-bookworm`: neovim, tmux, lazygit, TypeScript,
+starship, Crush, Glow, htop, Tailscale SSH. Published to `ghcr.io` for
+`linux/amd64` + `linux/arm64`.
 
-Docker dev environment on `node:26-bookworm`: neovim, tmux, lazygit, TypeScript, starship, Crush, Glow, htop, Tailscale SSH. Published to `ghcr.io` for `linux/amd64`+`linux/arm64`. No tests or linting.
+Details live in `docs/`; this file is only the index plus the rules that must
+load with every task.
 
-**Branch tags**: `main` -> `latest` + `YYYY.MM.DD` | non-main branches -> `{branch-name}` + `{branch-name}-YYYY.MM.DD`
+## Docs
 
-## Commands
+| Doc | Covers |
+|-----|--------|
+| [docs/architecture.md](docs/architecture.md) | Layout, the `/etc` vs `/root` split, entrypoint behavior, runtime hooks, image publishing and tags |
+| [docs/toolchain.md](docs/toolchain.md) | What ships in the image, build/run/Tailscale commands, testing, script language rules |
+| [docs/gotchas.md](docs/gotchas.md) | Networking, tmux/terminal, build, and notification pitfalls |
+| [docs/long-turn-notifications.md](docs/long-turn-notifications.md) | How the Crush turn clock, pid check, and OSC 9 delivery work |
+
+Update the matching doc when behavior changes, and keep this index in sync.
+
+## Quick commands
 
 | Action | Command |
 |--------|---------|
 | Build | `docker build -t telescreen .` |
 | Run | `docker run -it --rm telescreen` |
 | Persistent home | `docker run -it --rm -v dev-env-home:/root telescreen` |
-| Timezone | `-e TZ=America/New_York` |
-| Tailscale SSH | `--cap-add=NET_ADMIN --device /dev/net/tun -v tailscale-state:/var/lib/tailscale -e TS_AUTHKEY=tskey-auth-xxx -e TS_HOSTNAME=my-dev-env` |
-| Crush | `-e ZAI_API_KEY=your-key` |
-| Multi-arch | `docker buildx build --platform linux/amd64,linux/arm64 -t telescreen .` |
+| Hook tests | `node --test scripts/test-crush-notify.js` |
 
-No test suite, no linter. Verify changes with `docker build`.
+No linter. Verify changes with `docker build`.
 
-## Setup (one-time, host only)
+## Rules
 
-| Step | Command |
-|------|---------|
-| Verify skill loaded | `crush skill list` should show `check-versions` |
-
-## Architecture
-
-```
-Dockerfile
-  ├─ entrypoint.sh          → Runtime orchestrator (runs as root)
-  │    ├─ sets TZ
-  │    ├─ bootstraps .zshrc → copies /etc/zsh/zshrc (migrates pre-starship copies)
-  │    ├─ symlinks tmux.conf → /etc/tmux/tmux.conf
-  │    ├─ symlinks lazygit config → /etc/lazygit/config.yml (replaces empty/stale file)
-  │    ├─ copies plugins    → /opt/tmux-plugins/ → ~/.tmux/plugins/
-  │    ├─ copies skills     → /etc/agents/skills/
-  │    ├─ fetches nvim config from Gist (fallback /etc/nvim/init.lua)
-  │    ├─ starts tailscaled if TS_AUTHKEY set
-  │    ├─ appends aliases (idempotent)
-  │    ├─ sources ~/start.sh if present (runtime init hook)
-  │    └─ exec "$@" (zsh)
-  │
-  ├─ crush/
-  │    ├─ crush.json         → /etc/crush/crush.json (zai provider, $ZAI_API_KEY, LSPs)
-  │    └─ AGENTS.md          → /etc/crush/AGENTS.md (global prefs loaded via context_paths)
-  ├─ lazygit/
-  │    └─ config.yml         → /etc/lazygit/config.yml (gruvbox-material theme)
-  ├─ init.zsh               → Shell env (EDITOR, aliases, tat/trun fns, MOTD on login)
-  ├─ zshrc                  → Custom .zshrc template (starship prompt + sources init.zsh)
-  ├─ starship.toml          → /etc/starship/starship.toml (prompt config, $STARSHIP_CONFIG)
-  ├─ nvim/plugin/clipboard.lua → OSC 52 clipboard provider (copied to ~/.config/nvim/plugin/)
-  ├─ tmux/
-  │    ├─ tmux.conf         → /etc/tmux/tmux.conf (mouse, vi copy, yank, popup, renumber)
-  │    ├─ popup.sh          → Scratch popup (prefix+s)
-  │    ├─ session-status.sh → Status-right: * before hostname if scratch exists
-  │    └─ renumber-sess.sh  → Renumber numeric sessions
-  ├─ skills/                → Container skills (copied into image at /etc/agents/skills/)
-  ├─ .agents/skills/        → Repo skills (auto-discovered by Crush and other tools)
-  └─ .github/workflows/publish.yml → Multi-arch GHCR publish
-```
-
-Configs live in `/etc/` so they survive volume mounts on `/root`. Runtime customization hooks into the persistent home: `~/start.sh` is sourced by the entrypoint as bash on every container start, and `~/.zshrc` can be edited directly for per-shell setup (the baked template is only copied when it's missing).
-
-## Preferences
-
-Global git conventions live in `crush/AGENTS.md` (loaded via `context_paths` in `crush.json`). Repo-specific preferences:
-
-- Keep AGENTS.md in sync with the project structure.
-- When adding/updating skills, review frontmatter: set `user-invocable: true` on skills designed for manual invocation (trigger phrases, argument hints). Omit on auto-triggered knowledge-only skills.
-- Skills that write a standalone markdown artifact (e.g. handoff docs) must prefix the filename with the date in `YYYY-MM-DD` (e.g. `1997-11-21-<slug>.md`). Workspace state files that a skill updates in place (e.g. teach's `MISSION.md`, learning records) keep their fixed names.
-
-## Gotchas
-
-- `tailscaled` auto-detects `/dev/net/tun` — uses tun mode when available, falls back to userspace networking
-- Tailscale uses `--netfilter-mode=off` in tun mode (container kernels often lack nftables support)
-- No `.dockerignore` - full build context sent on every build.
-- Same-day pushes overwrite date tag.
-- Neovim Gist URL hardcoded in `entrypoint.sh`.
-- `LANG=C.UTF-8` is set in the image so tmux enables UTF-8 mode; without it tmux drops multibyte glyphs (`client_utf8=0`) and Nerd Font icons break inside tmux but still render outside it.
-- Tailscale SSH needs ACL policy in admin console.
-- tmux-yank OSC 52 only - no xclip/xsel in the image, so `@override_copy_command` copies into the tmux buffer and relies on `set-clipboard`; no clipboard support in some terminals.
-- tmux plugins pre-installed at build time (TPM + tmux-yank), linked on first start.
-- Scratch sessions (`scratch-*`) are persistent - they survive popup close, not killed automatically.
-- `STARSHIP_VERSION` is pinned in the Dockerfile; starship ships static musl tarballs so both arches install the same way.
+- Read the relevant doc in `docs/` before changing a subsystem; keep it updated
+  in the same change.
+- Global git conventions live in `crush/AGENTS.md` (loaded via `context_paths`
+  in `crush.json`); this file does not repeat them.
+- When adding or updating skills, review frontmatter: set
+  `user-invocable: true` on skills meant for manual invocation (trigger
+  phrases, argument hints), omit it on auto-triggered knowledge-only skills.
+- Skills that write a standalone markdown artifact (e.g. handoff docs) must
+  prefix the filename with the date: `YYYY-MM-DD-<slug>.md` (e.g.
+  `1997-11-21-<slug>.md`). Workspace state files updated in place (e.g. a
+  skill's `MISSION.md`, learning records) keep their fixed names.
+- Prefer JavaScript for new scripts; see
+  [docs/toolchain.md](docs/toolchain.md#language-rules) for the exact split
+  between JS, shell, and the ban on Python.
