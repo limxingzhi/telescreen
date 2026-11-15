@@ -171,6 +171,7 @@ docker run -it --rm -v ./start.sh:/root/start.sh -v dev-env-home:/root dev-env
 | Shortcut | Action |
 |----------|--------|
 | `prefix + s` | Open a scratch popup session (toggle) |
+| `prefix + e` | Open the scratch popup at 40% width, pinned to the right edge |
 | `prefix + h/j/k/l` | Navigate between panes (vi-style) |
 | `prefix + [` | Enter vi copy mode (`v` to select, `y` to yank to clipboard) |
 | `prefix + =` | Evenly split panes horizontally |
@@ -179,7 +180,7 @@ docker run -it --rm -v ./start.sh:/root/start.sh -v dev-env-home:/root dev-env
 
 ### Scratch sessions
 
-`prefix + s` opens a scratch tmux session in a popup - a throwaway workspace for quick experiments, running tests, editing notes, etc. The scratch is tied to your current session (e.g. session `main` gets `scratch-main`), so it persists across popup toggles. A `*` appears in the status bar (before the hostname) when a scratch session exists.
+`prefix + s` opens a scratch tmux session in a popup - a throwaway workspace for quick experiments, running tests, editing notes, etc. `prefix + e` opens the same scratch session in a narrower popup (40% of the terminal width) pinned to the right edge with a one-cell margin, handy as a side panel that leaves the left 60% visible. The scratch is tied to your current session (e.g. session `main` gets `scratch-main`), so it persists across popup toggles. A `*` appears in the status bar (before the hostname) when a scratch session exists.
 
 ### Session management with `tat`
 
