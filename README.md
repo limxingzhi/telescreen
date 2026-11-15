@@ -41,7 +41,6 @@ A cute, opinionated dev environment in a container. One `docker run` and you get
 | **[Glow](https://github.com/charmbracelet/glow)** | Read markdown files right in your terminal, beautifully rendered. `glow README.md` and swoon. |
 | **`ms`** | Serve any folder of markdown as a GitHub-styled site in your browser. Frontmatter, mermaid, and code highlighting included. |
 | **ripgrep, fd, fzf, jq** | The holy quaternity of "wait, that was fast." |
-| **htop** | Glance at what's chewing CPU and memory without leaving the terminal. |
 | **git** | Obviously. |
 
 ## Quick start
@@ -171,6 +170,8 @@ docker run -it --rm -v ./start.sh:/root/start.sh -v dev-env-home:/root dev-env
 | Shortcut | Action |
 |----------|--------|
 | `prefix + s` | Open a scratch popup session (toggle) |
+| `prefix + e` | Open the scratch popup at 40% width, pinned to the right edge |
+| `prefix + q` | Open the scratch popup at 40% width, pinned to the left edge |
 | `prefix + h/j/k/l` | Navigate between panes (vi-style) |
 | `prefix + [` | Enter vi copy mode (`v` to select, `y` to yank to clipboard) |
 | `prefix + =` | Evenly split panes horizontally |
@@ -179,7 +180,7 @@ docker run -it --rm -v ./start.sh:/root/start.sh -v dev-env-home:/root dev-env
 
 ### Scratch sessions
 
-`prefix + s` opens a scratch tmux session in a popup - a throwaway workspace for quick experiments, running tests, editing notes, etc. The scratch is tied to your current session (e.g. session `main` gets `scratch-main`), so it persists across popup toggles. A `*` appears in the status bar (before the hostname) when a scratch session exists.
+`prefix + s` opens a scratch tmux session in a popup - a throwaway workspace for quick experiments, running tests, editing notes, etc. `prefix + e` opens the same scratch session in a narrower popup (40% of the terminal width) pinned to the right edge with a one-cell margin, handy as a side panel that leaves the left 60% visible. `prefix + q` does the same on the left edge. (Note: `prefix + q` replaces the default pane-number display.) The scratch is tied to your current session (e.g. session `main` gets `scratch-main`), so it persists across popup toggles. A `*` appears in the status bar (before the hostname) when a scratch session exists. Inside a scratch session, `prefix + s`, `prefix + e`, and `prefix + q` detach from it (closing the popup) instead of nesting another popup.
 
 ### Session management with `tat`
 

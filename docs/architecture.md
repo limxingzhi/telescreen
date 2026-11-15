@@ -33,7 +33,7 @@ Dockerfile
   ├─ nvim/plugin/clipboard.lua → OSC 52 clipboard provider (copied to ~/.config/nvim/plugin/)
   ├─ tmux/
   │    ├─ tmux.conf         → /etc/tmux/tmux.conf (mouse, vi copy, yank, popup, renumber)
-  │    ├─ popup.sh          → Scratch popup (prefix+s)
+  │    ├─ popup.sh          → Scratch popup (prefix+s; prefix+e right / q left, narrow)
   │    ├─ session-status.sh → Status-right: * before hostname if scratch exists
   │    └─ renumber-sess.sh  → Renumber numeric sessions
   ├─ skills/                → Container skills (copied into image at /etc/agents/skills/)

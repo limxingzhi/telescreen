@@ -30,7 +30,6 @@ RUN apt-get update && apt-get install -y \
     jq \
     fzf \
     fd-find \
-    htop \
     build-essential \
     ca-certificates \
     tzdata \

@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Docker dev environment on `node:26-bookworm`: neovim, tmux, lazygit, TypeScript,
-starship, Crush, Glow, htop, Tailscale SSH. Published to `ghcr.io` for
+starship, Crush, Glow, Tailscale SSH. Published to `ghcr.io` for
 `linux/amd64` + `linux/arm64`.
 
 Details live in `docs/`; this file is only the index plus the rules that must
