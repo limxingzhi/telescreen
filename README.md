@@ -2,27 +2,19 @@
 
 A cute, opinionated dev environment in a container. One `docker run` and you get a fully-loaded workspace with all your favorite CLI tools.
 
-<p align="center">
-  <img src="screenshots/screenshot1 - running crush in tmux.png" alt="Running Crush in tmux" />
-</p>
+![Running Crush in tmux](screenshots/screenshot1%20-%20running%20crush%20in%20tmux.png)
 
 > Crush running inside tmux - just run `crush` and start chatting.
 
-<p align="center">
-  <img src="screenshots/screenshot2 - running nvim in a scratch session.png" alt="Neovim in a scratch popup session" />
-</p>
+![Neovim in a scratch popup session](screenshots/screenshot2%20-%20running%20nvim%20in%20a%20scratch%20session.png)
 
 > Neovim in a scratch popup session - `prefix+s` opens a scratch workspace on demand.
 
-<p align="center">
-  <img src="screenshots/screenshot3 - running crush and lazygit in panes.png" alt="Crush and lazygit side by side" />
-</p>
+![Crush and lazygit side by side](screenshots/screenshot3%20-%20running%20crush%20and%20lazygit%20in%20panes.png)
 
 > Crush and lazygit in split panes - `prefix+%` to split vertically, then run `lazygit` in the new pane.
 
-<p align="center">
-  <img src="screenshots/screenshot4 - four telescreen instances side by side.jpg" alt="Four telescreen instances running four different projects side by side" />
-</p>
+![Four telescreen instances running four different projects side by side](screenshots/screenshot4%20-%20four%20telescreen%20instances%20side%20by%20side.jpg)
 
 > Four isolated telescreen instances, running in parallel side by side — Crush writing a Raycast plugin via a skill, markserve serving telescreen's markdown docs over Tailscale, a webpage snapshot archive served over Tailscale, and n8n workflows authored via MCP — each with tmux inside.
 
@@ -145,9 +137,7 @@ ms 8080 127.0.0.1     # bind to localhost only
 ms -hd                # include hidden files in directory listings
 ```
 
-<p align="center">
-  <img src="screenshots/screenshot5 - serving markdown docs with ms.png" alt="Markdown docs served by ms" />
-</p>
+![Markdown docs served by ms](screenshots/screenshot5%20-%20serving%20markdown%20docs%20with%20ms.png)
 
 > Serving telescreen's docs with `ms` over Tailscale - frontmatter becomes a table and mermaid diagrams render right in the browser.
 
@@ -216,6 +206,11 @@ The core loop: Crush builds the code, lazygit reviews the changes, nvim steps in
 2. Run `crush` and describe what you want built
 3. Split a pane (`prefix + %`) and run `lazygit` to review diffs, stage, and commit
 4. Open `nvim` when you need to hand-edit something, or use the scratch popup (`prefix + s`) for quick notes
+5. Long-running side jobs get their own lane: `prefix + e` pops the scratch session in at 40% width on the right edge. Run the dev server and `tailscale serve` there while nvim stays in the background, and close the popup again with `prefix + e`
+
+![Neovim in the background with the dev server and tailscale serve in a right-side popup](screenshots/screenshot6%20-%20dev%20server%20and%20tailscale%20serve%20in%20a%20popup%20while%20nvim%20runs.png)
+
+> Neovim in the background, dev server and `tailscale serve` in the right-edge popup - `prefix + e` tucks a long-running side job into the right 40% of the screen, so it never steals the main task.
 
 ### Disposable package maintenance
 
