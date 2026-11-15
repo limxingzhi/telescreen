@@ -1,5 +1,5 @@
 #!/bin/bash
-# usage: popup.sh [width-percent] [x-percent|right] [height-percent]
+# usage: popup.sh [width-percent] [left|right|x-percent] [height-percent]
 
 WIDTH_PERCENT=${1:-80}
 X_POSITION=${2:-}
@@ -45,6 +45,9 @@ POPUP_ARGS=(-h "${POPUP_HEIGHT}" -w "${POPUP_WIDTH}")
 
 case "${X_POSITION}" in
   "")
+    ;;
+  left)
+    POPUP_ARGS+=(-x 1)
     ;;
   right)
     POPUP_ARGS+=(-x $((CLIENT_WIDTH - POPUP_WIDTH - 1)))
