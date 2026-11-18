@@ -3,7 +3,6 @@ FROM node:26-bookworm
 ARG NVIM_VERSION=v0.12.6
 ARG LAZYGIT_VERSION=v0.66.3
 ARG CRUSH_VERSION=v0.101.0
-ARG GLOW_VERSION=v3.0.0
 ARG TAILSCALE_VERSION=v1.104.7
 ARG STARSHIP_VERSION=v1.27.0
 ARG BUN_VERSION=v1.4.4
@@ -71,15 +70,6 @@ RUN ARCH=$(uname -m) && \
       "https://github.com/charmbracelet/crush/releases/download/${CRUSH_VERSION}/crush_${CRUSH_VERSION#v}_${CRUSH_ARCH}.deb" && \
     dpkg -i /tmp/crush.deb && \
     rm /tmp/crush.deb
-
-# Install Glow (markdown renderer) from Charm
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ]; then GLOW_ARCH="arm64"; \
-    else GLOW_ARCH="amd64"; fi && \
-    curl -fsSL --retry 5 --retry-all-errors -o /tmp/glow.deb \
-      "https://github.com/charmbracelet/glow/releases/download/${GLOW_VERSION}/glow_${GLOW_VERSION#v}_${GLOW_ARCH}.deb" && \
-    dpkg -i /tmp/glow.deb && \
-    rm /tmp/glow.deb
 
 # TypeScript tooling
 RUN npm install -g --ignore-scripts npm typescript typescript-language-server ts-node tsx http-server eslint bash-language-server markserv

@@ -3,10 +3,10 @@
 ## What ships in the image
 
 Base is `node:26-bookworm` with: neovim, tmux (+ TPM and tmux-yank), lazygit,
-TypeScript, Bun, starship, Crush, Glow, and Tailscale for SSH. Neovim's config
+TypeScript, Bun, starship, Crush, and Tailscale for SSH. Neovim's config
 is fetched from a Gist at first start (fallback: `/etc/nvim/init.lua`).
 
-Versions of the pinned tools (Neovim, lazygit, Crush, Glow, Tailscale,
+Versions of the pinned tools (Neovim, lazygit, Crush, Tailscale,
 starship, Bun) live as `ARG`s in the `Dockerfile`; check for upstream releases
 with the `check-versions` skill.
 

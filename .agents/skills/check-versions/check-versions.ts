@@ -6,7 +6,6 @@ const ARG_REPOS: Record<string, string> = {
   NVIM_VERSION: "neovim/neovim",
   LAZYGIT_VERSION: "jesseduffield/lazygit",
   CRUSH_VERSION: "charmbracelet/crush",
-  GLOW_VERSION: "charmbracelet/glow",
   TAILSCALE_VERSION: "tailscale/tailscale",
   STARSHIP_VERSION: "starship/starship",
   BUN_VERSION: "oven-sh/bun",
@@ -27,7 +26,6 @@ const ALIASES: Record<string, string> = {
   neovim: "NVIM_VERSION",
   lazygit: "LAZYGIT_VERSION",
   crush: "CRUSH_VERSION",
-  glow: "GLOW_VERSION",
   tailscale: "TAILSCALE_VERSION",
   starship: "STARSHIP_VERSION",
   bun: "BUN_VERSION",
@@ -41,7 +39,7 @@ function resolveTargets(args: string[]): string[] {
     const mapped = ALIASES[key];
     if (!mapped) {
       console.error(`unknown tool: ${arg}`);
-      console.error("usage: check-versions {neovim|lazygit|crush|glow|tailscale|starship|bun|all}");
+      console.error("usage: check-versions {neovim|lazygit|crush|tailscale|starship|bun|all}");
       process.exit(1);
     }
     targets.add(mapped);
