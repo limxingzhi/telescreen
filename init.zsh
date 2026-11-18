@@ -43,8 +43,3 @@ trun() {
         tmux switch-client -t "=$name"
     fi
 }
-
-if [[ -o login ]] && [[ -z "$_TELESCREEN_MOTD_SHOWN" ]]; then
-    export _TELESCREEN_MOTD_SHOWN=1
-    bash /usr/local/bin/motd.sh
-fi

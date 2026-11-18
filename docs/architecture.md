@@ -27,7 +27,7 @@ Dockerfile
   │    └─ notify/            → /etc/crush/notify/ (turn-notify.js, drain.js)
   ├─ lazygit/
   │    └─ config.yml         → /etc/lazygit/config.yml (gruvbox-material theme)
-  ├─ init.zsh               → Shell env (EDITOR, aliases, tat/trun fns, MOTD on login)
+  ├─ init.zsh               → Shell env (EDITOR, aliases, tat/trun fns)
   ├─ zshrc                  → Custom .zshrc template (starship prompt + sources init.zsh)
   ├─ starship.toml          → /etc/starship/starship.toml (prompt config, $STARSHIP_CONFIG)
   ├─ nvim/plugin/clipboard.lua → OSC 52 clipboard provider (copied to ~/.config/nvim/plugin/)
