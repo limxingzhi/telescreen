@@ -9,6 +9,7 @@ const ARG_REPOS: Record<string, string> = {
   GLOW_VERSION: "charmbracelet/glow",
   TAILSCALE_VERSION: "tailscale/tailscale",
   STARSHIP_VERSION: "starship/starship",
+  BUN_VERSION: "oven-sh/bun",
 };
 
 // Tools installed from a distro package repo rather than GitHub releases.
@@ -29,6 +30,7 @@ const ALIASES: Record<string, string> = {
   glow: "GLOW_VERSION",
   tailscale: "TAILSCALE_VERSION",
   starship: "STARSHIP_VERSION",
+  bun: "BUN_VERSION",
 };
 
 function resolveTargets(args: string[]): string[] {
@@ -39,7 +41,7 @@ function resolveTargets(args: string[]): string[] {
     const mapped = ALIASES[key];
     if (!mapped) {
       console.error(`unknown tool: ${arg}`);
-      console.error("usage: check-versions {neovim|lazygit|crush|glow|tailscale|starship|all}");
+      console.error("usage: check-versions {neovim|lazygit|crush|glow|tailscale|starship|bun|all}");
       process.exit(1);
     }
     targets.add(mapped);

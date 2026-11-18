@@ -6,6 +6,7 @@ ARG CRUSH_VERSION=v0.101.0
 ARG GLOW_VERSION=v3.0.0
 ARG TAILSCALE_VERSION=v1.104.7
 ARG STARSHIP_VERSION=v1.27.0
+ARG BUN_VERSION=v1.4.4
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm-256color
@@ -82,6 +83,16 @@ RUN ARCH=$(uname -m) && \
 
 # TypeScript tooling
 RUN npm install -g --ignore-scripts npm typescript typescript-language-server ts-node tsx http-server eslint bash-language-server markserv
+
+# Install Bun from GitHub releases
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ]; then BUN_ARCH="aarch64"; \
+    else BUN_ARCH="x64"; fi && \
+    curl -fsSL --retry 5 --retry-all-errors -o bun.zip \
+      "https://github.com/oven-sh/bun/releases/download/bun-${BUN_VERSION}/bun-linux-${BUN_ARCH}.zip" && \
+    unzip bun.zip && \
+    install bun-linux-${BUN_ARCH}/bun /usr/local/bin && \
+    rm -rf bun.zip bun-linux-${BUN_ARCH}
 
 # Install starship prompt from GitHub releases (static musl binary)
 RUN ARCH=$(uname -m) && \

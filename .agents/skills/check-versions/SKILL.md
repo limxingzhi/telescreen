@@ -1,8 +1,8 @@
 ---
 name: check-versions
-description: Check for newer upstream releases of pinned tools (Neovim, Lazygit, Crush, Glow, Tailscale, Starship) and bump the ARG versions in Dockerfile. Only applies to the telescreen repo.
+description: Check for newer upstream releases of pinned tools (Neovim, Lazygit, Crush, Glow, Tailscale, Starship, Bun) and bump the ARG versions in Dockerfile. Only applies to the telescreen repo.
 user-invocable: true
-argument-hint: "Tool to check (neovim, lazygit, crush, glow, tailscale, starship) or 'all'"
+argument-hint: "Tool to check (neovim, lazygit, crush, glow, tailscale, starship, bun) or 'all'"
 ---
 
 Run when the user asks to check for tool updates, bump versions, or update pinned packages in this repo.
@@ -17,6 +17,7 @@ Run when the user asks to check for tool updates, bump versions, or update pinne
 | `GLOW_VERSION` | charmbracelet/glow |
 | `TAILSCALE_VERSION` | `pkgs.tailscale.com` Debian apt index |
 | `STARSHIP_VERSION` | starship/starship |
+| `BUN_VERSION` | oven-sh/bun |
 
 Tailscale is the exception. The Dockerfile installs it with `apt-get install tailscale=<version>` from the Tailscale apt repo, so the GitHub release tag is not necessarily a version apt can install. The script reads the apt `Packages` index instead, and prints `not in apt repo yet` when a release has no `.deb` published. Do not bump `TAILSCALE_VERSION` past the version the script reports as installable.
 
