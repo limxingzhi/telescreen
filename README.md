@@ -185,7 +185,7 @@ Sessions with numeric names are auto-renumbered when created, closed, or renamed
 
 `trun <name>` does what `tat` does, but a new session is created with two windows already running:
 
-- Window 1: `crush --continue` (resumes the most recent session)
+- Window 1: `crush --continue -y` (resumes the most recent session in yolo mode)
 - Window 2: `lazygit`
 
 ```sh
@@ -273,7 +273,7 @@ Built into every shell:
 | `n` | `npm` |
 | `nr` | `npm run` |
 | `tat <name>` | Switch to or create a tmux session by name |
-| `trun <name>` | Like `tat`, but a new session opens `crush` and `lazygit` windows |
+| `trun <name>` | Like `tat`, but a new session opens yolo-mode `crush` and `lazygit` windows |
 
 ## Environment Variables
 
