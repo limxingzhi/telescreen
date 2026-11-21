@@ -123,6 +123,8 @@ ENV CRUSH_GLOBAL_CONFIG=/etc/crush/crush.json
 # Shell config (outside /root so it survives bind mounts)
 COPY init.zsh /etc/zsh/init.zsh
 COPY zshrc /etc/zsh/zshrc
+COPY container-env.zsh /etc/zsh/container-env.zsh
+RUN echo 'source /etc/zsh/container-env.zsh' >> /etc/zsh/zshenv
 
 # Tmux config (outside /root so it survives bind mounts)
 COPY tmux/tmux.conf /etc/tmux/tmux.conf

@@ -283,6 +283,10 @@ Built into every shell:
 | `TS_HOSTNAME` | Hostname for the Tailscale node (e.g. `my-dev-env` → SSH via `ssh root@my-dev-env`) |
 | `DEEPSEEK_API_KEY` | DeepSeek API key for Crush, expanded from `$DEEPSEEK_API_KEY` in `crush.json`. Required for AI features. Get one at [platform.deepseek.com](https://platform.deepseek.com). |
 
+Any variable passed this way is also visible in Tailscale SSH sessions: sshd
+starts them with a clean environment, so `/etc/zsh/zshenv` imports the missing
+values from PID 1 at shell startup.
+
 ## Multi-architecture
 
 Images are built for **linux/amd64** and **linux/arm64** and published to GHCR on every push to `main`.

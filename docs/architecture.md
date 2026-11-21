@@ -29,6 +29,7 @@ Dockerfile
   │    └─ config.yml         → /etc/lazygit/config.yml (gruvbox-material theme)
   ├─ init.zsh               → Shell env (EDITOR, aliases, tat/trun fns)
   ├─ zshrc                  → Custom .zshrc template (starship prompt + sources init.zsh)
+  ├─ container-env.zsh      → /etc/zsh/container-env.zsh (docker env for SSH shells)
   ├─ starship.toml          → /etc/starship/starship.toml (prompt config, $STARSHIP_CONFIG)
   ├─ nvim/plugin/clipboard.lua → OSC 52 clipboard provider (copied to ~/.config/nvim/plugin/)
   ├─ tmux/
@@ -52,12 +53,20 @@ still finds its configs with an empty or foreign home.
 |---------|----------------|-------------------------|
 | Shell startup | `/etc/zsh/zshrc` | copied to `~/.zshrc` only when missing |
 | Shell env and aliases | `/etc/zsh/init.zsh` | sourced by `~/.zshrc` |
+| Docker env vars in SSH sessions | `/etc/zsh/container-env.zsh` | sourced from `/etc/zsh/zshenv` by every zsh |
 | tmux | `/etc/tmux/tmux.conf` | symlinked every start |
 | lazygit | `/etc/lazygit/config.yml` | symlinked, replacing empty/stale files |
 | Crush | `/etc/crush/crush.json` | `CRUSH_GLOBAL_CONFIG` env var |
 | Crush global prefs | `/etc/crush/AGENTS.md` | `context_paths` in `crush.json` |
 | Provider API key | `DEEPSEEK_API_KEY` | `docker run -e` env var, expanded from `$DEEPSEEK_API_KEY` in `crush.json` |
 | tmux plugins | `/opt/tmux-plugins/` | copied to `~/.tmux/plugins/` |
+
+`sshd` builds a clean environment for each SSH login, so variables supplied with
+`docker run -e` or compose `environment:`/`env_file:` do not reach those shells,
+or the tmux and Crush processes they start. `/etc/zsh/zshenv` sources
+`container-env.zsh`, which copies any value the shell does not already define
+out of PID 1's environment. Values the SSH session already has (`TERM`, `PATH`,
+`HOME`, and so on) are left alone.
 
 ## Runtime customization
 

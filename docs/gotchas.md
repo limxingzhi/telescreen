@@ -31,6 +31,18 @@ Things that cost time once and will cost it again.
 - Scratch sessions (`scratch-*`) are persistent: closing the popup does not kill
   them.
 
+## Environment over SSH
+
+- Docker env vars (`-e`, compose `environment:`/`env_file:`) belong to PID 1 and
+  are not inherited by sshd. SSH shells and everything they start (tmux, Crush)
+  see only the SSH session environment, so `/etc/zsh/zshenv` imports the missing
+  values from `/proc/1/environ` via `container-env.zsh`.
+- An existing tmux server keeps the environment it was created with. Restart it
+  (`tmux kill-server`) after the container environment changes.
+- Crush materializes the provider key as a literal in
+  `~/.local/share/crush/crush.json`, so it keeps working when the env var is
+  invisible; that saved key wins over `DEEPSEEK_API_KEY` on later starts.
+
 ## Build
 
 - No `.dockerignore`: the full build context (including `screenshots/`) is sent
