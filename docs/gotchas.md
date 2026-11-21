@@ -57,6 +57,13 @@ Things that cost time once and will cost it again.
   every download uses `--retry 5 --retry-all-errors` (Neovim also sets
   `--retry-delay 5`) to ride out transient failures.
 
+## Crush config
+
+- Crush loads `/etc/crush/crush.json` on its own as the Linux system config.
+  Do not point `CRUSH_GLOBAL_CONFIG` at that file: Crush treats the variable as
+  a directory, appends `crush.json`, then fails trying to open
+  `/etc/crush/crush.json/crush.json`.
+
 ## Crush session titles
 
 - Crush titles a session with a small-model call budgeted for 40 tokens, but

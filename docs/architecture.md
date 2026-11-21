@@ -56,7 +56,7 @@ still finds its configs with an empty or foreign home.
 | Docker env vars in SSH sessions | `/etc/zsh/container-env.zsh` | sourced from `/etc/zsh/zshenv` by every zsh |
 | tmux | `/etc/tmux/tmux.conf` | symlinked every start |
 | lazygit | `/etc/lazygit/config.yml` | symlinked, replacing empty/stale files |
-| Crush | `/etc/crush/crush.json` | `CRUSH_GLOBAL_CONFIG` env var |
+| Crush | `/etc/crush/crush.json` | built-in system config path |
 | Crush global prefs | `/etc/crush/AGENTS.md` | `context_paths` in `crush.json` |
 | Provider API key | `DEEPSEEK_API_KEY` | `docker run -e` env var, expanded from `$DEEPSEEK_API_KEY` in `crush.json` |
 | tmux plugins | `/opt/tmux-plugins/` | copied to `~/.tmux/plugins/` |
