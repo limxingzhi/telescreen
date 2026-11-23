@@ -2,10 +2,10 @@ FROM node:26-bookworm
 
 ARG NVIM_VERSION=v0.12.6
 ARG LAZYGIT_VERSION=v0.66.3
-ARG CRUSH_VERSION=v0.101.0
-ARG GLOW_VERSION=v3.0.0
+ARG CRUSH_VERSION=v0.102.0
 ARG TAILSCALE_VERSION=v1.104.7
 ARG STARSHIP_VERSION=v1.27.0
+ARG BUN_VERSION=v1.4.5
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TERM=xterm-256color
@@ -71,17 +71,18 @@ RUN ARCH=$(uname -m) && \
     dpkg -i /tmp/crush.deb && \
     rm /tmp/crush.deb
 
-# Install Glow (markdown renderer) from Charm
-RUN ARCH=$(uname -m) && \
-    if [ "$ARCH" = "aarch64" ]; then GLOW_ARCH="arm64"; \
-    else GLOW_ARCH="amd64"; fi && \
-    curl -fsSL --retry 5 --retry-all-errors -o /tmp/glow.deb \
-      "https://github.com/charmbracelet/glow/releases/download/${GLOW_VERSION}/glow_${GLOW_VERSION#v}_${GLOW_ARCH}.deb" && \
-    dpkg -i /tmp/glow.deb && \
-    rm /tmp/glow.deb
-
 # TypeScript tooling
 RUN npm install -g --ignore-scripts npm typescript typescript-language-server ts-node tsx http-server eslint bash-language-server markserv
+
+# Install Bun from GitHub releases
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ]; then BUN_ARCH="aarch64"; \
+    else BUN_ARCH="x64"; fi && \
+    curl -fsSL --retry 5 --retry-all-errors -o bun.zip \
+      "https://github.com/oven-sh/bun/releases/download/bun-${BUN_VERSION}/bun-linux-${BUN_ARCH}.zip" && \
+    unzip bun.zip && \
+    install bun-linux-${BUN_ARCH}/bun /usr/local/bin && \
+    rm -rf bun.zip bun-linux-${BUN_ARCH}
 
 # Install starship prompt from GitHub releases (static musl binary)
 RUN ARCH=$(uname -m) && \
@@ -117,11 +118,12 @@ COPY skills/ /etc/agents/skills/
 # Crush config + global instructions (outside /root so it survives bind mounts)
 COPY crush/ /etc/crush/
 RUN chmod +x /etc/crush/notify/*.js
-ENV CRUSH_GLOBAL_CONFIG=/etc/crush/crush.json
 
 # Shell config (outside /root so it survives bind mounts)
 COPY init.zsh /etc/zsh/init.zsh
 COPY zshrc /etc/zsh/zshrc
+COPY container-env.zsh /etc/zsh/container-env.zsh
+RUN echo 'source /etc/zsh/container-env.zsh' >> /etc/zsh/zshenv
 
 # Tmux config (outside /root so it survives bind mounts)
 COPY tmux/tmux.conf /etc/tmux/tmux.conf
@@ -136,9 +138,8 @@ RUN git clone --single-branch --depth 1 --branch v1.2.1 https://github.com/tmux-
 
 # Entrypoint
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-COPY scripts/motd.sh /usr/local/bin/motd.sh
 COPY scripts/ms /usr/local/bin/ms
-RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/motd.sh /usr/local/bin/ms
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/ms
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["zsh"]

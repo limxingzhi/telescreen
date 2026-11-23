@@ -44,14 +44,14 @@ The `skills/` directory vendors skills from upstream repos. Each vendored SKILL.
 - **Attribution**: keep the `Source:` / `source:` line pointing at upstream.
 - **Descriptions**: keep the repo's trigger-rich descriptions; upstream rewrites often shorten them.
 - **Names**: keep local skill names and H1 titles (e.g. `diagnose`, not upstream's `diagnosing-bugs`).
-- **Behaviour**: keep deliberate local choices (e.g. handoff saves to `~/.handoff/`).
+- **Behaviour**: keep deliberate local choices (e.g. handoff saves to `./.handoff/` in the working directory).
 - **Date prefixes**: keep local date-prefixed markdown filenames (`YYYY-MM-DD-<slug>.md`) for standalone artifacts (e.g. handoff docs); leave in-place workspace state files (e.g. teach's learning records) un-prefixed.
 - **Never vendor** upstream `agents/*.yaml`: OpenAI packaging, unused here.
 
 ## Special cases
 
 - **grill-me**: upstream SKILL.md is a one-line stub ("Call the Skill tool with 'grilling'."); its content moved to packaging this repo does not vendor. Keep the local full version and skip updates to it.
-- **handoff**: the local save path `~/.handoff/` is deliberate, and so is the "Keep handoffs current" section (update in place per unit of work, retire finished handoffs, keep them short). Upstream has no equivalent, so re-add it after any `--apply`.
+- **handoff**: the local save path `./.handoff/` in the working directory (date-prefixed filenames) is deliberate, and so is the "Keep handoffs current" section (update in place per unit of work, retire finished handoffs, keep them short). Upstream has no equivalent, so re-add it after any `--apply`.
 - **diagnose**: the local name and H1 intentionally differ from the upstream dir name (`diagnosing-bugs`).
 
 ## Adding a new vendored skill

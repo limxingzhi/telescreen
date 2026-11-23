@@ -33,7 +33,7 @@ trun() {
 
     local crush_window
     crush_window=$(tmux new-session -d -P -F '#{window_index}' -s "$name" -n crush \
-        'crush --continue; exec ${SHELL:-zsh}')
+        'crush --continue -y; exec ${SHELL:-zsh}')
     tmux new-window -t "=$name" -n lazygit 'lazygit; exec ${SHELL:-zsh}'
     tmux select-window -t "$name:$crush_window"
 
@@ -43,8 +43,3 @@ trun() {
         tmux switch-client -t "=$name"
     fi
 }
-
-if [[ -o login ]] && [[ -z "$_TELESCREEN_MOTD_SHOWN" ]]; then
-    export _TELESCREEN_MOTD_SHOWN=1
-    bash /usr/local/bin/motd.sh
-fi

@@ -31,6 +31,18 @@ Things that cost time once and will cost it again.
 - Scratch sessions (`scratch-*`) are persistent: closing the popup does not kill
   them.
 
+## Environment over SSH
+
+- Docker env vars (`-e`, compose `environment:`/`env_file:`) belong to PID 1 and
+  are not inherited by sshd. SSH shells and everything they start (tmux, Crush)
+  see only the SSH session environment, so `/etc/zsh/zshenv` imports the missing
+  values from `/proc/1/environ` via `container-env.zsh`.
+- An existing tmux server keeps the environment it was created with. Restart it
+  (`tmux kill-server`) after the container environment changes.
+- Crush materializes the provider key as a literal in
+  `~/.local/share/crush/crush.json`, so it keeps working when the env var is
+  invisible; that saved key wins over `DEEPSEEK_API_KEY` on later starts.
+
 ## Build
 
 - No `.dockerignore`: the full build context (including `screenshots/`) is sent
@@ -44,6 +56,13 @@ Things that cost time once and will cost it again.
   and are rate-limited anonymously. Builds do not authenticate to GitHub, so
   every download uses `--retry 5 --retry-all-errors` (Neovim also sets
   `--retry-delay 5`) to ride out transient failures.
+
+## Crush config
+
+- Crush loads `/etc/crush/crush.json` on its own as the Linux system config.
+  Do not point `CRUSH_GLOBAL_CONFIG` at that file: Crush treats the variable as
+  a directory, appends `crush.json`, then fails trying to open
+  `/etc/crush/crush.json/crush.json`.
 
 ## Crush session titles
 

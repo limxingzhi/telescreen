@@ -29,8 +29,8 @@ A cute, opinionated dev environment in a container. One `docker run` and you get
 | **tmux** | Persistent sessions with mouse support, vi copy mode, yank-to-clipboard, and a scratch popup. |
 | **lazygit** | Git but make it fun. Staging, committing, rebasing, diffing - all from a gorgeous TUI. |
 | **Node.js 26 + TypeScript** | `tsc`, `ts-node`, `tsx`, `eslint`, `http-server` and more. |
+| **[Bun](https://bun.sh)** | Blazing-fast JavaScript runtime, package manager, bundler, and test runner. |
 | **LSP support** | Crush ships with language servers for TypeScript and Bash. |
-| **[Glow](https://github.com/charmbracelet/glow)** | Read markdown files right in your terminal, beautifully rendered. `glow README.md` and swoon. |
 | **`ms`** | Serve any folder of markdown as a GitHub-styled site in your browser. Frontmatter, mermaid, and code highlighting included. |
 | **ripgrep, fd, fzf, jq** | The holy quaternity of "wait, that was fast." |
 | **git** | Obviously. |
@@ -128,7 +128,7 @@ docker run -it --rm -v ./my-init.lua:/root/.config/nvim/init.lua dev-env
 
 ## Markdown preview with `ms`
 
-`glow` is great for reading a file in the terminal, but sometimes you want the whole docs folder in a browser. `ms` serves any directory as a browsable markdown site with GitHub styling, syntax-highlighted code, task lists, emoji, and mermaid diagrams. YAML frontmatter is rendered as a table at the top of the page, and folders without an `index.md` fall back to a directory listing. Plain text files (`.txt`, `.log`, `.sh`) are served as `text/plain`, so the browser shows them inline instead of downloading them.
+`ms` serves any directory as a browsable markdown site with GitHub styling, syntax-highlighted code, task lists, emoji, and mermaid diagrams. YAML frontmatter is rendered as a table at the top of the page, and folders without an `index.md` fall back to a directory listing. Plain text files (`.txt`, `.log`, `.sh`) are served as `text/plain`, so the browser shows them inline instead of downloading them.
 
 ```sh
 ms                    # serve the current directory on http://0.0.0.0:3456
@@ -185,7 +185,7 @@ Sessions with numeric names are auto-renumbered when created, closed, or renamed
 
 `trun <name>` does what `tat` does, but a new session is created with two windows already running:
 
-- Window 1: `crush --continue` (resumes the most recent session)
+- Window 1: `crush --continue -y` (resumes the most recent session in yolo mode)
 - Window 2: `lazygit`
 
 ```sh
@@ -273,7 +273,7 @@ Built into every shell:
 | `n` | `npm` |
 | `nr` | `npm run` |
 | `tat <name>` | Switch to or create a tmux session by name |
-| `trun <name>` | Like `tat`, but a new session opens `crush` and `lazygit` windows |
+| `trun <name>` | Like `tat`, but a new session opens yolo-mode `crush` and `lazygit` windows |
 
 ## Environment Variables
 
@@ -282,6 +282,10 @@ Built into every shell:
 | `TS_AUTHKEY` | Tailscale auth key. Required on first run; optional after that if state is persisted. |
 | `TS_HOSTNAME` | Hostname for the Tailscale node (e.g. `my-dev-env` → SSH via `ssh root@my-dev-env`) |
 | `DEEPSEEK_API_KEY` | DeepSeek API key for Crush, expanded from `$DEEPSEEK_API_KEY` in `crush.json`. Required for AI features. Get one at [platform.deepseek.com](https://platform.deepseek.com). |
+
+Any variable passed this way is also visible in Tailscale SSH sessions: sshd
+starts them with a clean environment, so `/etc/zsh/zshenv` imports the missing
+values from PID 1 at shell startup.
 
 ## Multi-architecture
 

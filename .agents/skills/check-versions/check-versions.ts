@@ -6,9 +6,9 @@ const ARG_REPOS: Record<string, string> = {
   NVIM_VERSION: "neovim/neovim",
   LAZYGIT_VERSION: "jesseduffield/lazygit",
   CRUSH_VERSION: "charmbracelet/crush",
-  GLOW_VERSION: "charmbracelet/glow",
   TAILSCALE_VERSION: "tailscale/tailscale",
   STARSHIP_VERSION: "starship/starship",
+  BUN_VERSION: "oven-sh/bun",
 };
 
 // Tools installed from a distro package repo rather than GitHub releases.
@@ -21,14 +21,20 @@ const APT_INDEXES: Record<string, string[]> = {
   ],
 };
 
+// Some repos prefix their release tags with the tool name, but the Dockerfile
+// ARGs hold the bare version.
+const TAG_PREFIXES: Record<string, string> = {
+  BUN_VERSION: "bun-",
+};
+
 const ALIASES: Record<string, string> = {
   nvim: "NVIM_VERSION",
   neovim: "NVIM_VERSION",
   lazygit: "LAZYGIT_VERSION",
   crush: "CRUSH_VERSION",
-  glow: "GLOW_VERSION",
   tailscale: "TAILSCALE_VERSION",
   starship: "STARSHIP_VERSION",
+  bun: "BUN_VERSION",
 };
 
 function resolveTargets(args: string[]): string[] {
@@ -39,7 +45,7 @@ function resolveTargets(args: string[]): string[] {
     const mapped = ALIASES[key];
     if (!mapped) {
       console.error(`unknown tool: ${arg}`);
-      console.error("usage: check-versions {neovim|lazygit|crush|glow|tailscale|starship|all}");
+      console.error("usage: check-versions {neovim|lazygit|crush|tailscale|starship|bun|all}");
       process.exit(1);
     }
     targets.add(mapped);
@@ -53,6 +59,11 @@ async function fetchLatestTag(repo: string): Promise<string> {
   if (!res.ok) throw new Error(`failed to fetch ${url}: ${res.status}`);
   const data = await res.json() as { tag_name: string };
   return data.tag_name;
+}
+
+function normalizeTag(argName: string, tag: string): string {
+  const prefix = TAG_PREFIXES[argName];
+  return prefix && tag.startsWith(prefix) ? tag.slice(prefix.length) : tag;
 }
 
 function parseAptVersions(index: string): Set<string> {
@@ -96,13 +107,13 @@ type Latest = { version: string; note?: string };
 
 async function fetchLatestVersion(argName: string): Promise<Latest> {
   const indexes = APT_INDEXES[argName];
-  if (!indexes) return { version: await fetchLatestTag(ARG_REPOS[argName]) };
+  if (!indexes) return { version: normalizeTag(argName, await fetchLatestTag(ARG_REPOS[argName])) };
 
   const version = await fetchLatestPublished(indexes);
 
   let note: string | undefined;
   try {
-    const tag = await fetchLatestTag(ARG_REPOS[argName]);
+    const tag = normalizeTag(argName, await fetchLatestTag(ARG_REPOS[argName]));
     if (compareVersions(tag, version) > 0) note = `${tag} released but not in apt repo yet`;
   } catch {
     // Release check is advisory only.
